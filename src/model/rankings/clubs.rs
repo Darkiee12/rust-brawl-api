@@ -9,7 +9,6 @@ use crate::util::fetch_route;
 use crate::error::Result;
 
 #[cfg(feature = "async")]
-use async_trait::async_trait;
 
 #[cfg(feature = "async")]
 use crate::util::a_fetch_route;
@@ -89,7 +88,6 @@ impl DerefMut for ClubLeaderboard {
     }
 }
 
-#[cfg_attr(feature = "async", async_trait)]
 impl PropLimFetchable for ClubLeaderboard {
     type Property = str;
     type Limit = u8;
@@ -219,12 +217,9 @@ impl PropLimFetchable for ClubLeaderboard {
     /// [`Error::Json`]: error/enum.Error.html#variant.Json
     #[cfg(feature="async")]
     async fn a_fetch(
-        client: &Client, country_code: &'async_trait str, limit: u8
-    ) -> Result<ClubLeaderboard>
-        where Self: 'async_trait,
-              Self::Property: 'async_trait,
-    {
-        let route = ClubLeaderboard::get_route(&country_code, limit);
+        client: &Client, country_code: &str, limit: u8
+    ) -> Result<ClubLeaderboard> {
+        let route = ClubLeaderboard::get_route(country_code, limit);
         a_fetch_route::<ClubLeaderboard>(client, &route).await
     }
 }
@@ -259,6 +254,10 @@ pub struct ClubRanking {
     #[serde(default)]
     pub name: String,
 
+    /// The club's badge id.
+    #[serde(default)]
+    pub badge_id: usize,
+
     /// The club's current trophies.
     #[serde(default)]
     pub trophies: usize,
@@ -273,28 +272,11 @@ pub struct ClubRanking {
 }
 
 impl Default for ClubRanking {
-    /// Returns an instance of `ClubRanking` with initial values.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use brawl_api::ClubRanking;
-    ///
-    /// assert_eq!(
-    ///     ClubRanking::default(),
-    ///     ClubRanking {
-    ///         tag: String::from(""),
-    ///         name: String::from(""),
-    ///         trophies: 0,
-    ///         rank: 1,
-    ///         member_count: 0,
-    ///     }
-    /// );
-    /// ```
     fn default() -> ClubRanking {
         ClubRanking {
             tag: String::from(""),
             name: String::from(""),
+            badge_id: 0,
             trophies: 0,
             rank: 1,
             member_count: 0,
@@ -427,6 +409,7 @@ mod tests {
                     ClubRanking {
                         tag: String::from("#AAAAAAAAA"),
                         name: String::from("Club"),
+                        badge_id: 0,
                         member_count: 50,
                         trophies: 30000,
                         rank: 1,
@@ -434,6 +417,7 @@ mod tests {
                     ClubRanking {
                         tag: String::from("#EEEEEEE"),
                         name: String::from("Also Club"),
+                        badge_id: 0,
                         member_count: 30,
                         trophies: 25000,
                         rank: 2,
@@ -441,6 +425,7 @@ mod tests {
                     ClubRanking {
                         tag: String::from("#QQQQQQQ"),
                         name: String::from("Clubby Club"),
+                        badge_id: 0,
                         member_count: 25,
                         trophies: 23000,
                         rank: 3,
@@ -448,6 +433,7 @@ mod tests {
                     ClubRanking {
                         tag: String::from("#55555553Q"),
                         name: String::from("Not a valid club"),
+                        badge_id: 0,
                         member_count: 10,
                         trophies: 20000,
                         rank: 4,
@@ -455,6 +441,32 @@ mod tests {
                 ]
             }
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn rankings_clubs_with_badge_deser() -> Result<(), Box<dyn ::std::error::Error>> {
+        let json = r##"{
+  "items": [
+    {
+      "tag": "#TOPCLUB1",
+      "name": "Top Club",
+      "badgeId": 8000011,
+      "trophies": 2000000,
+      "rank": 1,
+      "memberCount": 30
+    }
+  ],
+  "paging": { "cursors": {} }
+}"##;
+        let leaders = serde_json::from_str::<ClubLeaderboard>(json)
+            .map_err(Error::Json)?;
+
+        assert_eq!(leaders.len(), 1);
+        assert_eq!(leaders[0].badge_id, 8000011);
+        assert_eq!(leaders[0].trophies, 2000000);
+        assert_eq!(leaders[0].rank, 1);
 
         Ok(())
     }

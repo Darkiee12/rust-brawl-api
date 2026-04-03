@@ -10,7 +10,6 @@ use crate::error::Result;
 use crate::serde::one_default;
 
 #[cfg(feature = "async")]
-use async_trait::async_trait;
 use crate::http::Client;
 
 use super::player::Player;
@@ -109,7 +108,6 @@ impl GetFetchProp for BattleLog {
     }
 }
 
-#[cfg_attr(feature = "async", async_trait)]
 impl FetchFrom<Player> for BattleLog {
     /// (Sync) Fetches a given player's battlelog (a `BattleLog` instance) by using data from
     /// an existing [`Player`] instance. (See [`BattleLog::fetch`] for more details.)
@@ -171,7 +169,6 @@ impl FetchFrom<Player> for BattleLog {
     }
 }
 
-#[cfg_attr(feature = "async", async_trait)]
 impl PropFetchable for BattleLog {
     type Property = str;
 
@@ -243,10 +240,7 @@ impl PropFetchable for BattleLog {
     /// [`Error::Ratelimited`]: error/enum.Error.html#variant.Ratelimited
     /// [`Error::Json`]: error/enum.Error.html#variant.Json
     #[cfg(feature="async")]
-    async fn a_fetch(client: &Client, tag: &'async_trait str) -> Result<BattleLog>
-        where Self: 'async_trait,
-              Self::Property: 'async_trait,
-    {
+    async fn a_fetch(client: &Client, tag: &str) -> Result<BattleLog> {
         let route = BattleLog::get_route(tag);
         let mut battle_log = a_fetch_route::<BattleLog>(client, &route).await?;
         battle_log.tag = tag.to_owned();
@@ -307,6 +301,7 @@ impl Default for Battle {
 ///
 /// [`Battle`]: struct.Battle.html
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BattleEvent {
     /// The id of the event (an arbitrary number).
     #[serde(default)]
@@ -315,6 +310,10 @@ pub struct BattleEvent {
     /// The event mode (e.g. "brawlBall", "soloShowdown"...).
     #[serde(default)]
     pub mode: String,
+
+    /// The numeric mode id.
+    #[serde(default)]
+    pub mode_id: Option<usize>,
 
     /// The name of the map where this battle happened.
     #[serde(default)]
@@ -338,13 +337,14 @@ impl Default for BattleEvent {
     ///
     /// assert_eq!(
     ///     BattleEvent::default(),
-    ///     BattleEvent { id: 0, mode: String::from(""), map: String::from("") }
+    ///     BattleEvent { id: 0, mode: String::from(""), mode_id: None, map: String::from("") }
     /// )
     /// ```
     fn default() -> BattleEvent {
         BattleEvent {
             id: 0,
             mode: String::from(""),
+            mode_id: None,
             map: String::from(""),
         }
     }
@@ -546,7 +546,7 @@ pub struct BattleBrawler {
     #[serde(default)]
     pub name: String,
 
-    /// The brawler's power (1-10).
+    /// The brawler's power level.
     #[serde(default = "one_default")]
     pub power: u8,
 
@@ -702,6 +702,7 @@ mod tests {
                         event: BattleEvent {
                             id: 15000163,
                             mode: String::from("brawlBall"),
+                            mode_id: None,
                             map: String::from("Coarse Course")
                         },
                         result: BattleResultInfo {
@@ -792,6 +793,68 @@ mod tests {
                 tag: String::from(""),
             }
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn battlelog_mode_id_deser() -> Result<(), Box<dyn ::std::error::Error>> {
+        let json = r##"{
+  "items": [{
+    "battleTime": "20250401T120000.000Z",
+    "event": {
+      "id": 15000007,
+      "mode": "gemGrab",
+      "modeId": 0,
+      "map": "Hard Rock Mine"
+    },
+    "battle": {
+      "mode": "gemGrab",
+      "type": "ranked",
+      "result": "victory",
+      "duration": 120,
+      "trophyChange": 10
+    }
+  }]
+}"##;
+        let log: BattleLog = serde_json::from_str(json)?;
+
+        assert_eq!(log.items.len(), 1);
+        let battle = &log.items[0];
+        assert_eq!(battle.event.id, 15000007);
+        assert_eq!(battle.event.mode, "gemGrab");
+        assert_eq!(battle.event.mode_id, Some(0));
+        assert_eq!(battle.event.map, "Hard Rock Mine");
+        assert_eq!(battle.result.mode, "gemGrab");
+        assert_eq!(battle.result.trophy_change, 10);
+
+        Ok(())
+    }
+
+    #[test]
+    fn battlelog_missing_mode_id() -> Result<(), Box<dyn ::std::error::Error>> {
+        let json = r##"{
+  "items": [{
+    "battleTime": "20250401T120000.000Z",
+    "event": {
+      "id": 15000005,
+      "mode": "bounty",
+      "map": "Shooting Star"
+    },
+    "battle": {
+      "mode": "bounty",
+      "type": "ranked",
+      "result": "defeat",
+      "duration": 90,
+      "trophyChange": -5
+    }
+  }]
+}"##;
+        let log: BattleLog = serde_json::from_str(json)?;
+
+        assert_eq!(log.items[0].event.mode_id, None);
+        assert_eq!(log.items[0].result.result, Some(BattleOutcome::Defeat));
+        assert_eq!(log.items[0].result.trophy_change, -5);
 
         Ok(())
     }

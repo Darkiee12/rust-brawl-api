@@ -4,12 +4,12 @@
 use serde::{self, Serialize, Deserialize};
 use crate::traits::{PropLimRouteable, PropLimFetchable};
 use crate::serde::{one_default, oxffffff_default, deserialize_number_from_string};
+use crate::model::common::Icon;
 use std::ops::{Deref, DerefMut};
 use crate::util::fetch_route;
 use crate::error::Result;
 
 #[cfg(feature = "async")]
-use async_trait::async_trait;
 
 #[cfg(feature = "async")]
 use crate::util::a_fetch_route;
@@ -89,7 +89,6 @@ impl DerefMut for PlayerLeaderboard {
     }
 }
 
-#[cfg_attr(feature = "async", async_trait)]
 impl PropLimFetchable for PlayerLeaderboard {
     type Property = str;
     type Limit = u8;
@@ -223,12 +222,9 @@ impl PropLimFetchable for PlayerLeaderboard {
     /// [`Error::Json`]: error/enum.Error.html#variant.Json
     #[cfg(feature="async")]
     async fn a_fetch(
-        client: &Client, country_code: &'async_trait str, limit: u8
-    ) -> Result<PlayerLeaderboard>
-        where Self: 'async_trait,
-              Self::Property: 'async_trait,
-    {
-        let route = PlayerLeaderboard::get_route(&country_code, limit);
+        client: &Client, country_code: &str, limit: u8
+    ) -> Result<PlayerLeaderboard> {
+        let route = PlayerLeaderboard::get_route(country_code, limit);
         a_fetch_route::<PlayerLeaderboard>(client, &route).await
     }
 }
@@ -255,14 +251,6 @@ impl PropLimRouteable for PlayerLeaderboard {
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayerRanking {
-    /// The club the player is in - at the moment, only its name is available for this data model.
-    /// To convert to a full [`Club`] object, see the [`PlayerRankingClub`] docs.
-    ///
-    /// [`Player`]: ../../players/struct.Player.html
-    /// [`Player::fetch_from`]: ../../players/struct.Player.html#method.fetch_from
-    #[serde(default)]
-    pub club: PlayerRankingClub,
-
     /// The player's tag.
     #[serde(default)]
     pub tag: String,
@@ -270,6 +258,15 @@ pub struct PlayerRanking {
     /// The player's name.
     #[serde(default)]
     pub name: String,
+
+    /// The player's name color. Defaults to `0xffffff` (white).
+    #[serde(default = "oxffffff_default")]
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub name_color: u64,
+
+    /// The player's icon.
+    #[serde(default)]
+    pub icon: Option<Icon>,
 
     /// The player's trophies.
     #[serde(default)]
@@ -279,10 +276,9 @@ pub struct PlayerRanking {
     #[serde(default = "one_default")]
     pub rank: u8,
 
-    /// The player's name color. Defaults to `0xffffff` (white).
-    #[serde(default = "oxffffff_default")]
-    #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub name_color: u64,
+    /// The club the player is in.
+    #[serde(default)]
+    pub club: PlayerRankingClub,
 }
 
 /// Represents the club in a player's ranking (a [`PlayerRanking`] object). Since the only data
@@ -400,6 +396,7 @@ mod tests {
                         tag: String::from("#AAAAAAAAA"),
                         name: String::from("Player"),
                         name_color: 0xfff05637,
+                        icon: None,
                         trophies: 30000,
                         rank: 1,
                         club: PlayerRankingClub {
@@ -410,6 +407,7 @@ mod tests {
                         tag: String::from("#EEEEEEE"),
                         name: String::from("Also Player"),
                         name_color: 0xffa2e3fe,
+                        icon: None,
                         trophies: 25000,
                         rank: 2,
                         club: PlayerRankingClub {
@@ -420,6 +418,7 @@ mod tests {
                         tag: String::from("#QQQQQQQ"),
                         name: String::from("Youtuber"),
                         name_color: 0xfff05637,
+                        icon: None,
                         trophies: 23000,
                         rank: 3,
                         club: PlayerRankingClub {
@@ -430,6 +429,7 @@ mod tests {
                         tag: String::from("#55555553Q"),
                         name: String::from("Not a valid player"),
                         name_color: 0xfff9cf08,
+                        icon: None,
                         trophies: 20000,
                         rank: 4,
                         club: PlayerRankingClub {
@@ -440,6 +440,36 @@ mod tests {
             }
         );
         
+        Ok(())
+    }
+
+    #[test]
+    fn rankings_players_with_icon_deser() -> Result<(), Box<dyn ::std::error::Error>> {
+        use crate::model::common::Icon;
+
+        let json = r##"{
+  "items": [
+    {
+      "tag": "#G2CQURQ08",
+      "name": "TopPlayer",
+      "nameColor": "0xfff9c908",
+      "icon": { "id": 28000126 },
+      "trophies": 90000,
+      "rank": 1,
+      "club": { "name": "Elite Club" }
+    }
+  ],
+  "paging": { "cursors": {} }
+}"##;
+        let leaders = serde_json::from_str::<PlayerLeaderboard>(json)
+            .map_err(Error::Json)?;
+
+        assert_eq!(leaders.len(), 1);
+        assert_eq!(leaders[0].tag, "#G2CQURQ08");
+        assert_eq!(leaders[0].icon, Some(Icon { id: 28000126 }));
+        assert_eq!(leaders[0].trophies, 90000);
+        assert_eq!(leaders[0].rank, 1);
+
         Ok(())
     }
 }

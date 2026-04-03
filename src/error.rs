@@ -184,7 +184,7 @@ impl StdError for Error {
 
             #[cfg(feature = "chrono")]
             Error::ParseTimeLike { ref original_err, .. } => match original_err {
-                Some(ref e) => Some(e),
+                Some(e) => Some(e),
                 None => None,
             },
 
@@ -197,7 +197,7 @@ impl Error {
 
     fn description(&self) -> String {
         match *self {
-            Error::Json(ref e) => String::from(e.description()),
+            Error::Json(ref e) => String::from(e.to_string()),
 
             Error::Authorization(_) => String::from(
                 "Auth key was provided in an invalid format for a header."
@@ -227,7 +227,7 @@ impl Error {
                 format!("Ratelimited{}{}{}", dot, lim_part, time_part)
             },
 
-            Error::Request(ref e) => String::from(e.description()),
+            Error::Request(ref e) => e.to_string(),
 
 //            Error::Decode(msg, _) => String::from(msg),
 

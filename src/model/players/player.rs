@@ -11,7 +11,6 @@ use serde::{self, Serialize, Deserialize};
 use crate::util::a_fetch_route;
 
 #[cfg(feature = "async")]
-use async_trait::async_trait;
 
 use crate::traits::{FetchFrom, PropFetchable, GetFetchProp};
 use crate::error::{Result};
@@ -24,9 +23,9 @@ use crate::http::routes::Route;
 use crate::util::{auto_hashtag, fetch_route};
 use crate::serde::{deserialize_number_from_string, one_default, oxffffff_default};
 
-use super::super::common::StarPower;
+use super::super::common::{StarPower, Gadget, Gear, HyperCharge, Skin, Buffies, Icon};
 
-use super::battlelog::{BattlePlayer};
+use super::battlelog::BattlePlayer;
 
 #[cfg(feature = "rankings")]
 use crate::PlayerRanking;
@@ -42,20 +41,6 @@ use crate::PlayerRanking;
 #[serde(rename_all = "camelCase")]
 pub struct Player {
 
-    /// The club the Player is in (as a [`PlayerClub`] instance), or None if none.
-    ///
-    /// [`PlayerClub`]: ./struct.PlayerClub.html
-    #[serde(default)]
-    pub club: Option<PlayerClub>,
-
-    /// Whether or not the Player was qualified from the Championship challenge (2020).
-    #[serde(default = "false_default")]
-    pub is_qualified_from_championship_challenge: bool,
-
-    /// Amount of 3v3 victories the Player has earned.
-    #[serde(rename = "3vs3Victories")]
-    pub tvt_victories: usize,
-
     /// The player's tag. **Note: this includes the initial '#'.**
     #[serde(default)]
     pub tag: String,
@@ -64,96 +49,89 @@ pub struct Player {
     #[serde(default)]
     pub name: String,
 
+    /// The player's name color, as an integer (Default is 0xffffff = 16777215).
+    #[serde(default = "oxffffff_default")]
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub name_color: u64,
+
+    /// The player's icon.
+    #[serde(default)]
+    pub icon: Option<Icon>,
+
     /// The player's current trophies.
-    #[serde(default)]  // zero
+    #[serde(default)]
     pub trophies: usize,
 
     /// The player's highest trophies amount.
-    #[serde(default)]  // zero
+    #[serde(default)]
     pub highest_trophies: usize,
+
+    /// The player's total prestige level across all brawlers.
+    #[serde(default)]
+    pub total_prestige_level: usize,
 
     /// The player's experience level.
     #[serde(default = "one_default")]
     pub exp_level: usize,
 
     /// The player's experience points.
-    #[serde(default)]  // zero
+    #[serde(default)]
     pub exp_points: usize,
 
-    /// The player's current power play points.
-    #[serde(default)]  // zero
-    pub power_play_points: usize,
+    /// Whether or not the Player was qualified from the Championship challenge.
+    #[serde(default = "false_default")]
+    pub is_qualified_from_championship_challenge: bool,
 
-    /// The player's highest power play points.
-    #[serde(default)]  // zero
-    pub highest_power_play_points: usize,
+    /// Amount of 3v3 victories the Player has earned.
+    #[serde(rename = "3vs3Victories")]
+    pub tvt_victories: usize,
 
     /// The player's victories in solo showdown (how many times ranked #1).
-    #[serde(default)]  // zero
+    #[serde(default)]
     pub solo_victories: usize,
 
     /// The player's victories in duo showdown (how many times ranked #1).
-    #[serde(default)]  // zero
+    #[serde(default)]
     pub duo_victories: usize,
 
     /// The player's best Robo Rumble time, in seconds.
-    #[serde(default)]  // zero
+    #[serde(default)]
     pub best_robo_rumble_time: usize,
 
     /// The player's best time as a Big Brawler, in seconds.
-    #[serde(default)]  // zero
+    #[serde(default)]
     pub best_time_as_big_brawler: usize,
+
+    /// The club the Player is in, or None if none.
+    #[serde(default)]
+    pub club: Option<PlayerClub>,
 
     /// The player's brawlers.
     #[serde(default)]
     pub brawlers: Vec<PlayerBrawlerStat>,
-
-    /// The player's name color, as an integer (Default is 0xffffff = 16777215 - this is used
-    /// when the data is not available).
-    #[serde(default = "oxffffff_default")]
-    #[serde(deserialize_with = "deserialize_number_from_string")]  // parse num
-    pub name_color: u64,
 }
 fn false_default() -> bool { false }
 
 impl Default for Player {
-    
-    /// Initializes a Player instance with default values for each field.
     fn default() -> Player {
         Player {
-            club: None,
-
-            is_qualified_from_championship_challenge: false,
-
-            tvt_victories: 0,
-
             tag: String::from(""),
-
             name: String::from(""),
-
-            trophies: 0,
-
-            highest_trophies: 0,
-
-            exp_level: 1,
-
-            exp_points: 0,
-
-            power_play_points: 0,
-
-            highest_power_play_points: 0,
-
-            solo_victories: 0,
-
-            duo_victories: 0,
-
-            best_robo_rumble_time: 0,
-
-            best_time_as_big_brawler: 0,
-
-            brawlers: Vec::<PlayerBrawlerStat>::new(),
-
             name_color: 0xff_ff_ff,
+            icon: None,
+            trophies: 0,
+            highest_trophies: 0,
+            total_prestige_level: 0,
+            exp_level: 1,
+            exp_points: 0,
+            is_qualified_from_championship_challenge: false,
+            tvt_victories: 0,
+            solo_victories: 0,
+            duo_victories: 0,
+            best_robo_rumble_time: 0,
+            best_time_as_big_brawler: 0,
+            club: None,
+            brawlers: Vec::new(),
         }
     }
 }
@@ -166,7 +144,6 @@ impl GetFetchProp for Player {
     fn get_route(tag: &str) -> Route { Route::Player(auto_hashtag(tag)) }
 }
 
-#[cfg_attr(feature = "async", async_trait)]
 impl PropFetchable for Player {
     type Property = str;
 
@@ -236,16 +213,12 @@ impl PropFetchable for Player {
     /// [`Error::Ratelimited`]: error/enum.Error.html#variant.Ratelimited
     /// [`Error::Json`]: error/enum.Error.html#variant.Json
     #[cfg(feature="async")]
-    async fn a_fetch(client: &Client, tag: &'async_trait str) -> Result<Player>
-        where Self: 'async_trait,
-              Self::Property: 'async_trait,
-    {
-        let route = Player::get_route(&tag);
+    async fn a_fetch(client: &Client, tag: &str) -> Result<Player> {
+        let route = Player::get_route(tag);
         a_fetch_route::<Player>(client, &route).await
     }
 }
 
-#[cfg_attr(feature = "async", async_trait)]
 #[cfg(feature = "clubs")]
 impl FetchFrom<ClubMember> for Player {
     /// (Sync) Fetches a `Player` instance, given a preexisting `ClubMember` instance.
@@ -304,7 +277,6 @@ impl FetchFrom<ClubMember> for Player {
     }
 }
 
-#[cfg_attr(feature = "async", async_trait)]
 impl FetchFrom<BattlePlayer> for Player {
     /// (Async) Fetches a `Player` instance, given a preexisting `BattlePlayer` instance.
     ///
@@ -380,7 +352,6 @@ impl FetchFrom<BattlePlayer> for Player {
     }
 }
 
-#[cfg_attr(feature = "async", async_trait)]
 #[cfg(feature = "rankings")]
 impl FetchFrom<PlayerRanking> for Player {
 
@@ -450,17 +421,17 @@ impl Default for PlayerClub {
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayerBrawlerStat {
-
-    /// A vector containing the brawler's star powers (represented by [`StarPower`]),
-    /// if any (otherwise empty vector).
-    ///
-    /// [`StarPower`]: ./struct.StarPower.html
-    #[serde(default)]
-    pub star_powers: Vec<StarPower>,
-
     /// The brawler's id (an arbitrary number).
-    #[serde(default)]  // zero
+    #[serde(default)]
     pub id: usize,
+
+    /// The brawler's name.
+    #[serde(default)]
+    pub name: String,
+
+    /// The brawler's power (1-11).
+    #[serde(default = "one_default")]
+    pub power: u8,
 
     /// The brawler's rank.
     #[serde(default = "one_default")]
@@ -471,30 +442,64 @@ pub struct PlayerBrawlerStat {
     pub trophies: usize,
 
     /// The brawler's highest trophies amount.
-    #[serde(default)]  // zero
+    #[serde(default)]
     pub highest_trophies: usize,
 
-    /// The brawler's power (1-10).
-    #[serde(default = "one_default")]
-    pub power: u8,
-
-    /// The brawler's name.
+    /// The brawler's prestige level.
     #[serde(default)]
-    pub name: String,
+    pub prestige_level: usize,
+
+    /// The brawler's current win streak.
+    #[serde(default)]
+    pub current_win_streak: usize,
+
+    /// The brawler's maximum win streak.
+    #[serde(default)]
+    pub max_win_streak: usize,
+
+    /// The brawler's equipped skin, if any.
+    #[serde(default)]
+    pub skin: Option<Skin>,
+
+    /// The brawler's star powers.
+    #[serde(default)]
+    pub star_powers: Vec<StarPower>,
+
+    /// The brawler's gadgets.
+    #[serde(default)]
+    pub gadgets: Vec<Gadget>,
+
+    /// The brawler's gears.
+    #[serde(default)]
+    pub gears: Vec<Gear>,
+
+    /// The brawler's hyper charges.
+    #[serde(default)]
+    pub hyper_charges: Vec<HyperCharge>,
+
+    /// Which ability upgrades the brawler has unlocked.
+    #[serde(default)]
+    pub buffies: Option<Buffies>,
 }
 
 impl Default for PlayerBrawlerStat {
-    
-    /// Initializes a new BrawlerStat instance, with default values.
     fn default() -> PlayerBrawlerStat {
         PlayerBrawlerStat {
-            star_powers: vec![],
             id: 0,
+            name: String::from(""),
+            power: 1,
             rank: 1,
             trophies: 0,
             highest_trophies: 0,
-            power: 1,
-            name: String::from(""),
+            prestige_level: 0,
+            current_win_streak: 0,
+            max_win_streak: 0,
+            skin: None,
+            star_powers: vec![],
+            gadgets: vec![],
+            gears: vec![],
+            hyper_charges: vec![],
+            buffies: None,
         }
     }
 }
@@ -505,10 +510,10 @@ impl Default for PlayerBrawlerStat {
 mod tests {
     use std::result::Result as StdResult;
     use super::{Player, PlayerClub, PlayerBrawlerStat, StarPower};
+    use crate::model::common::{Icon, Gadget, Gear, HyperCharge, Skin, Buffies};
     use crate::error::Error as BrawlError;
     use serde_json;
 
-    /// Tests for player deserialization from API-provided JSON.
     #[test]
     fn players_deser() -> StdResult<(), Box<dyn ::std::error::Error>> {
         let player_json_s = r##"{
@@ -572,8 +577,6 @@ mod tests {
                 name_color: 0xff1ba5f5,
                 trophies: 13370,
                 highest_trophies: 30000,
-                power_play_points: 200,
-                highest_power_play_points: 900,
                 exp_level: 100,
                 exp_points: 70000,
                 is_qualified_from_championship_challenge: false,
@@ -594,7 +597,8 @@ mod tests {
                         rank: 20,
                         trophies: 500,
                         highest_trophies: 549,
-                        star_powers: vec![]
+                        star_powers: vec![],
+                        ..PlayerBrawlerStat::default()
                     },
                     PlayerBrawlerStat {
                         id: 16000001,
@@ -612,11 +616,143 @@ mod tests {
                                 id: 23000077,
                                 name: String::from("Slick Boots")
                             }
-                        ]
+                        ],
+                        ..PlayerBrawlerStat::default()
                     },
-                ]
+                ],
+                ..Player::default()
             }
         );
+        Ok(())
+    }
+
+    #[test]
+    fn player_new_fields_deser() -> StdResult<(), Box<dyn ::std::error::Error>> {
+        let json = r##"{
+  "tag": "#PLAYER123",
+  "name": "ExamplePlayer",
+  "nameColor": "0xfff9c908",
+  "icon": { "id": 28000272 },
+  "trophies": 67383,
+  "highestTrophies": 67383,
+  "totalPrestigeLevel": 18,
+  "expLevel": 314,
+  "expPoints": 502341,
+  "isQualifiedFromChampionshipChallenge": false,
+  "3vs3Victories": 28058,
+  "soloVictories": 899,
+  "duoVictories": 2089,
+  "bestRoboRumbleTime": 20,
+  "bestTimeAsBigBrawler": 0,
+  "club": { "tag": "#CLUB123", "name": "Example Club" },
+  "brawlers": [{
+    "id": 16000000,
+    "name": "SHELLY",
+    "power": 11,
+    "rank": 4,
+    "trophies": 675,
+    "highestTrophies": 807,
+    "prestigeLevel": 0,
+    "currentWinStreak": 1,
+    "maxWinStreak": 1,
+    "skin": { "id": 29000844, "name": "SQUAD BUSTER\nSHELLY" },
+    "gadgets": [
+      { "id": 23000255, "name": "FAST FORWARD" },
+      { "id": 23000288, "name": "CLAY PIGEONS" }
+    ],
+    "gears": [
+      { "id": 62000002, "name": "DAMAGE", "level": 3 },
+      { "id": 62000000, "name": "SPEED", "level": 3 }
+    ],
+    "starPowers": [
+      { "id": 23000076, "name": "SHELL SHOCK" },
+      { "id": 23000135, "name": "BAND-AID" }
+    ],
+    "hyperCharges": [
+      { "id": 23000613, "name": "DOUBLE BARREL" }
+    ],
+    "buffies": {
+      "gadget": true,
+      "starPower": true,
+      "hyperCharge": true
+    }
+  }]
+}"##;
+        let player: Player = serde_json::from_str(json).map_err(BrawlError::Json)?;
+
+        assert_eq!(player.tag, "#PLAYER123");
+        assert_eq!(player.icon, Some(Icon { id: 28000272 }));
+        assert_eq!(player.total_prestige_level, 18);
+        assert_eq!(player.trophies, 67383);
+        assert_eq!(player.exp_level, 314);
+
+        let brawler = &player.brawlers[0];
+        assert_eq!(brawler.power, 11);
+        assert_eq!(brawler.prestige_level, 0);
+        assert_eq!(brawler.current_win_streak, 1);
+        assert_eq!(brawler.max_win_streak, 1);
+        assert_eq!(brawler.skin, Some(Skin {
+            id: 29000844,
+            name: String::from("SQUAD BUSTER\nSHELLY"),
+        }));
+        assert_eq!(brawler.gadgets.len(), 2);
+        assert_eq!(brawler.gadgets[0], Gadget { id: 23000255, name: String::from("FAST FORWARD") });
+        assert_eq!(brawler.gears.len(), 2);
+        assert_eq!(brawler.gears[0], Gear { id: 62000002, name: String::from("DAMAGE"), level: 3 });
+        assert_eq!(brawler.hyper_charges.len(), 1);
+        assert_eq!(brawler.hyper_charges[0], HyperCharge { id: 23000613, name: String::from("DOUBLE BARREL") });
+        assert_eq!(brawler.buffies, Some(Buffies {
+            gadget: true,
+            star_power: true,
+            hyper_charge: true,
+        }));
+
+        Ok(())
+    }
+
+    #[test]
+    fn player_missing_optional_fields() -> StdResult<(), Box<dyn ::std::error::Error>> {
+        let json = r##"{
+  "tag": "#MINIMAL",
+  "name": "MinPlayer",
+  "nameColor": "0xffffffff",
+  "trophies": 100,
+  "highestTrophies": 100,
+  "expLevel": 1,
+  "expPoints": 0,
+  "isQualifiedFromChampionshipChallenge": false,
+  "3vs3Victories": 0,
+  "soloVictories": 0,
+  "duoVictories": 0,
+  "bestRoboRumbleTime": 0,
+  "bestTimeAsBigBrawler": 0,
+  "brawlers": []
+}"##;
+        let player: Player = serde_json::from_str(json).map_err(BrawlError::Json)?;
+
+        assert_eq!(player.tag, "#MINIMAL");
+        assert_eq!(player.icon, None);
+        assert_eq!(player.total_prestige_level, 0);
+        assert_eq!(player.club, None);
+        assert!(player.brawlers.is_empty());
+
+        Ok(())
+    }
+
+    #[test]
+    fn player_roundtrip_serialization() -> StdResult<(), Box<dyn ::std::error::Error>> {
+        let player = Player {
+            tag: String::from("#TEST"),
+            name: String::from("Test"),
+            icon: Some(Icon { id: 28000001 }),
+            total_prestige_level: 5,
+            ..Player::default()
+        };
+
+        let json = serde_json::to_string(&player)?;
+        let deser: Player = serde_json::from_str(&json)?;
+        assert_eq!(player, deser);
+
         Ok(())
     }
 }

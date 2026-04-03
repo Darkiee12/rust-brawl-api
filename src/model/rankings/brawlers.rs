@@ -11,9 +11,6 @@ use crate::error::Result;
 #[cfg(feature = "async")]
 use crate::util::a_fetch_route;
 
-#[cfg(feature = "async")]
-
-
 use crate::http::Client;
 use crate::http::routes::Route;
 use super::players::PlayerRanking;
@@ -348,6 +345,7 @@ mod tests {
                         tag: String::from("#AAAAAAAAA"),
                         name: String::from("Player"),
                         name_color: 0xfff05637,
+                        icon: None,
                         trophies: 30000,
                         rank: 1,
                         club: PlayerRankingClub {
@@ -358,6 +356,7 @@ mod tests {
                         tag: String::from("#EEEEEEE"),
                         name: String::from("Also Player"),
                         name_color: 0xffa2e3fe,
+                        icon: None,
                         trophies: 25000,
                         rank: 2,
                         club: PlayerRankingClub {
@@ -368,6 +367,7 @@ mod tests {
                         tag: String::from("#QQQQQQQ"),
                         name: String::from("Youtuber"),
                         name_color: 0xfff05637,
+                        icon: None,
                         trophies: 23000,
                         rank: 3,
                         club: PlayerRankingClub {
@@ -378,6 +378,7 @@ mod tests {
                         tag: String::from("#55555553Q"),
                         name: String::from("Not a valid player"),
                         name_color: 0xfff9cf08,
+                        icon: None,
                         trophies: 20000,
                         rank: 4,
                         club: PlayerRankingClub {

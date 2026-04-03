@@ -53,7 +53,7 @@
 //! - `async` flag:
 //!     - Enables the usage of async (non-blocking) fetch functions - `a_fetch`, `a_fetch_from`,
 //! `a_fetch_into`, `a_refetch` - where applicable.
-//!     - Adds `async_trait` as a dependency.
+//!     - Uses native `async fn` in traits (Rust 1.75+).
 //! - `auto-hashtag` flag: Enables the smart insertion of hashtags on anywhere a tag is required.
 //!     - This means, for example, that on a [`Player::fetch`] call, which requires the tag of the
 //! player to be fetched, one can pass a string containing a hashtag at the start (in which case,
@@ -84,12 +84,14 @@
 //! [`model::rankings`]: model/rankings/index.html
 //! [`model::brawlers`]: model/brawlers/index.html
 
+#![allow(async_fn_in_trait)]
+
 pub(crate) mod util;
 
 pub(crate) mod serde;
 
 pub mod constants;
-pub use constants::Brawlers;
+pub use constants::{Brawlers, GameMode, GearType};
 
 pub mod http;
 pub use http::client::Client;
@@ -101,8 +103,13 @@ pub mod model;
 pub mod time;
 pub use time::TimeLike;
 
+pub use model::common::Icon;
+
 #[cfg(any(feature = "players", feature = "brawlers"))]
-pub use model::common::StarPower;
+pub use model::common::{StarPower, Gadget, Gear, HyperCharge};
+
+#[cfg(feature = "players")]
+pub use model::common::{Skin, Buffies};
 
 #[cfg(feature = "players")]
 pub use model::players::{
