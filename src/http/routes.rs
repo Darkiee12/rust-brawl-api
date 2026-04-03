@@ -101,34 +101,34 @@ impl Route {
     /// ```
     pub fn to_url_str(&self) -> String {
         match self {
-            Route::Player(ref s) => format!("{}{}", b_api_concat!("players/"), s),
+            Route::Player(s) => format!("{}{}", b_api_concat!("players/"), s),
 
-            Route::PlayerBattlelogs(ref s) => format!(
+            Route::PlayerBattlelogs(s) => format!(
                 "{}{}/battlelog", b_api_concat!("players/"), s
             ),
 
-            Route::Club(ref s) => format!("{}{}", b_api_concat!("clubs/"), s),
+            Route::Club(s) => format!("{}{}", b_api_concat!("clubs/"), s),
 
-            Route::ClubMembers(ref s) => format!(
+            Route::ClubMembers(s) => format!(
                 "{}{}/members", b_api_concat!("clubs/"), s
             ),
 
             Route::PlayerRankings {
-                ref country_code,
+                country_code,
                 limit
             } => format!(
                 "{}{}/players?limit={}", b_api_concat!("rankings/"), country_code, limit
             ),
 
             Route::ClubRankings {
-                ref country_code,
+                country_code,
                 limit
             } => format!(
                 "{}{}/clubs?limit={}", b_api_concat!("rankings/"), country_code, limit
             ),
 
             Route::BrawlerRankings {
-                ref country_code,
+                country_code,
                 brawler_id,
                 limit
             } => format!(

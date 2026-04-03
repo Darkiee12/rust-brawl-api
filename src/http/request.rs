@@ -75,24 +75,16 @@ impl<'a> Request<'a> {
     ///
     /// [`RequestBuilder`]: https://docs.rs/reqwest/*/reqwest/blocking/struct.RequestBuilder.html
     pub fn build(&'a self, client: &Client) -> Result<RequestBuilder> {
-        let Request {
-            body,
-            headers: ref r_headers,
-            endpoint: ref r_endpoint,
-            ref method,
-        } = *self;
-
         let mut builder = client.inner.request(
-            method.clone(),
-            Url::parse(r_endpoint).map_err(Error::Url)?,
+            self.method.clone(),
+            Url::parse(&self.endpoint).map_err(Error::Url)?,
         );
 
-        if let Some(ref bytes) = body {  // body was provided
-            let b_vec = Vec::from(*bytes);
-            builder = builder.body(b_vec);
+        if let Some(bytes) = self.body {
+            builder = builder.body(Vec::from(bytes));
         }
 
-        let key = &client.auth_key;
+        let key = client.auth_key.clone();
 
         let key = if key.starts_with("Bearer ") {
             key.clone()
@@ -107,7 +99,7 @@ impl<'a> Request<'a> {
         headers.insert(CONTENT_TYPE, HeaderValue::from_static(&"application/json"));
         headers.insert(CONTENT_LENGTH, HeaderValue::from_static(&"0"));
 
-        if let Some(ref r_headers) = r_headers {
+        if let Some(r_headers) = &self.headers {
             headers.extend(r_headers.clone());
         }
 
@@ -121,21 +113,13 @@ impl<'a> Request<'a> {
     /// [`RequestBuilder`]: https://docs.rs/reqwest/*/reqwest/struct.RequestBuilder.html
     #[cfg(feature = "async")]
     pub fn a_build(&'a self, client: &Client) -> Result<ARequestBuilder> {
-        let Request {
-            body,
-            headers: ref r_headers,
-            endpoint: ref r_endpoint,
-            ref method,
-        } = *self;
-
         let mut builder = client.a_inner.request(
-            method.clone(),
-            Url::parse(r_endpoint).map_err(Error::Url)?,
+            self.method.clone(),
+            Url::parse(&self.endpoint).map_err(Error::Url)?,
         );
 
-        if let Some(ref bytes) = body {  // body was provided
-            let b_vec = Vec::from(*bytes);
-            builder = builder.body(b_vec);
+        if let Some(bytes) = self.body {
+            builder = builder.body(Vec::from(bytes));
         }
 
         let key = &client.auth_key;
@@ -153,7 +137,7 @@ impl<'a> Request<'a> {
         headers.insert(CONTENT_TYPE, HeaderValue::from_static(&"application/json"));
         headers.insert(CONTENT_LENGTH, HeaderValue::from_static(&"0"));
 
-        if let Some(ref r_headers) = r_headers {
+        if let Some(r_headers) = &self.headers {
             headers.extend(r_headers.clone());
         }
 

@@ -10,10 +10,9 @@ use serde::{self, Serialize, Deserialize};
 use crate::error::Result;
 
 #[cfg(feature = "async")]
-use async_trait::async_trait;
 use crate::http::Client;
 
-use super::common::StarPower;
+use super::common::{StarPower, Gadget, Gear, HyperCharge};
 
 #[cfg(feature = "players")]
 use super::players::{
@@ -200,44 +199,40 @@ impl BrawlerList {
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Brawler {
-    /// The brawler's name, in CAPS LOCK. E.g.: `"SHELLY"` for Shelly.
-    #[serde(default)]
-    pub name: String,
-
     /// The brawler's ID (an arbitrary number representing it).
     #[serde(default)]
     pub id: usize,
 
-    /// The brawler's star powers, as a vector (note that this does **not** have a fixed size:
-    /// new brawlers start with 1 star power, while older ones have at least 2.)
+    /// The brawler's name, in CAPS LOCK. E.g.: `"SHELLY"` for Shelly.
+    #[serde(default)]
+    pub name: String,
+
+    /// The brawler's star powers.
     #[serde(default)]
     pub star_powers: Vec<StarPower>,
+
+    /// The brawler's gadgets.
+    #[serde(default)]
+    pub gadgets: Vec<Gadget>,
+
+    /// The brawler's gears.
+    #[serde(default)]
+    pub gears: Vec<Gear>,
+
+    /// The brawler's hyper charges.
+    #[serde(default)]
+    pub hyper_charges: Vec<HyperCharge>,
 }
 
 impl Default for Brawler {
-
-
-    /// Returns an instance of `Brawler` with initial values.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use brawl_api::Brawler;
-    ///
-    /// assert_eq!(
-    ///     Brawler::default(),
-    ///     Brawler {
-    ///         name: String::from(""),
-    ///         id: 0,
-    ///         star_powers: vec![]
-    ///     }
-    /// );
-    /// ```
     fn default() -> Brawler {
         Brawler {
-            name: String::from(""),
             id: 0,
-            star_powers: vec![]
+            name: String::from(""),
+            star_powers: vec![],
+            gadgets: vec![],
+            gears: vec![],
+            hyper_charges: vec![],
         }
     }
 }
@@ -348,7 +343,6 @@ impl Brawler {
     }
 }
 
-#[cfg_attr(feature = "async", async_trait)]
 impl Refetchable for Brawler {
     /// (Sync) Fetches data for this brawler again.
     fn refetch(&self, client: &Client) -> Result<Brawler> {
@@ -362,7 +356,6 @@ impl Refetchable for Brawler {
     }
 }
 
-#[cfg_attr(feature = "async", async_trait)]
 #[cfg(feature = "players")]
 impl FetchFrom<PlayerBrawlerStat> for Brawler {
     /// (Sync) Attempts to fetch a `Brawler` from an existing [`PlayerBrawlerStat`] instance.
@@ -381,7 +374,6 @@ impl FetchFrom<PlayerBrawlerStat> for Brawler {
     }
 }
 
-#[cfg_attr(feature = "async", async_trait)]
 #[cfg(feature = "players")]
 impl FetchFrom<BattleBrawler> for Brawler {
     /// (Sync) Attempts to fetch a `Brawler` from an existing [`BattleBrawler`] instance.
@@ -400,7 +392,6 @@ impl FetchFrom<BattleBrawler> for Brawler {
     }
 }
 
-#[cfg_attr(feature = "async", async_trait)]
 impl FetchFrom<Brawlers> for Brawler {
     /// (Sync) Attempts to fetch a `Brawler` from an existing [`Brawlers`] variant.
     ///
@@ -512,7 +503,8 @@ mod tests {
                       id: 23000135,
                       name: String::from("Band-Aid")
                     }
-                  ]
+                  ],
+                  ..Brawler::default()
                 },
                 Brawler {
                   id: 16000001,
@@ -526,7 +518,8 @@ mod tests {
                       id: 23000138,
                       name: String::from("Magnum Special")
                     }
-                  ]
+                  ],
+                  ..Brawler::default()
                 },
                 Brawler {
                   id: 16000002,
@@ -540,7 +533,8 @@ mod tests {
                       id: 23000137,
                       name: String::from("Tough Guy")
                     }
-                  ]
+                  ],
+                  ..Brawler::default()
                 },
                 Brawler {
                   id: 16000003,
@@ -554,7 +548,8 @@ mod tests {
                       id: 23000150,
                       name: String::from("Rocket No. Four")
                     }
-                  ]
+                  ],
+                  ..Brawler::default()
                 }
               ]
             }
@@ -600,7 +595,8 @@ mod tests {
                         id: 23000135,
                         name: String::from("Band-Aid")
                     }
-                ]
+                ],
+                ..Brawler::default()
             }
         );
 

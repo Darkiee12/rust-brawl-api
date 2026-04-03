@@ -3,4 +3,4 @@
 pub use super::traits::*;
 pub use super::http::client::Client;
 pub use super::model::*;
-pub use super::constants::Brawlers;
+pub use super::constants::{Brawlers, GameMode, GearType};

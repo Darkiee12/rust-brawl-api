@@ -8,8 +8,6 @@
 
 use crate::error::{Result};
 
-#[cfg(feature = "async")]
-use async_trait::async_trait;
 use crate::http::Client;
 // use serde::de::DeserializeOwned;
 
@@ -59,7 +57,6 @@ pub mod propfetch {
 
     /// A trait representing a type whose instance can be fetched from the API using some property.
     /// This is usually the object's tag.
-    #[cfg_attr(feature = "async", async_trait)]
     pub trait PropFetchable: Sized {
         type Property: ?Sized;
 
@@ -132,9 +129,7 @@ pub mod propfetch {
         /// [`Error::Ratelimited`]: error/enum.Error.html#variant.Ratelimited
         /// [`Error::Json`]: error/enum.Error.html#variant.Json
         #[cfg(feature = "async")]
-        async fn a_fetch(client: &Client, prop: &'async_trait Self::Property) -> Result<Self>
-            where Self: 'async_trait,
-                  Self::Property: 'async_trait;
+        async fn a_fetch(client: &Client, prop: &Self::Property) -> Result<Self>;
     }
 }
 
@@ -160,7 +155,6 @@ pub mod proplimfetch {
     ///
     /// **Note:** types which simply require the limit for fetching use [`PropFetchable`] instead
     /// (with the limit being the property itself).
-    #[cfg_attr(feature = "async", async_trait)]
     pub trait PropLimFetchable: Sized {
         type Property: ?Sized;
         type Limit: PrimInt;  // numeric
@@ -248,10 +242,7 @@ pub mod proplimfetch {
         /// [`Error::Ratelimited`]: error/enum.Error.html#variant.Ratelimited
         /// [`Error::Json`]: error/enum.Error.html#variant.Json
         #[cfg(feature = "async")]
-        async fn a_fetch(client: &Client, prop: &'async_trait Self::Property, limit: Self::Limit) -> Result<Self>
-            where Self: 'async_trait,
-                  Self::Property: 'async_trait,
-                  Self::Limit: 'async_trait;
+        async fn a_fetch(client: &Client, prop: &Self::Property, limit: Self::Limit) -> Result<Self>;
     }
 }
 
@@ -265,7 +256,6 @@ pub use proplimfetch::*;
 ///
 /// [`PropFetchable`]: traits/propfetch/trait.PropFetchable.html
 /// [`GetFetchProp`]: traits/propfetch/trait.GetFetchProp.html
-#[cfg_attr(feature = "async", async_trait)]
 pub trait Refetchable: Sized {
     /// (Sync) Causes this instance to be re-fetched (i.e., updated to latest Brawl Stars data).
     ///
@@ -330,7 +320,7 @@ pub trait Refetchable: Sized {
     /// not need to be assigned; rather, that is done for the programmer (the variable's value
     /// **is entirely replaced** by a new one, if the fetching is successful).
     #[cfg(feature = "async")]
-    async fn a_refetch_update(&'async_trait mut self, client: &Client) -> Result<&'async_trait Self>
+    async fn a_refetch_update(&mut self, client: &Client) -> Result<&Self>
         where Self: Send + Sync,
     {
         *self = self.a_refetch(client).await?;
@@ -338,7 +328,6 @@ pub trait Refetchable: Sized {
     }
 }
 
-#[cfg_attr(feature = "async", async_trait)]
 impl<T> Refetchable for T
     where T: PropFetchable<Property=<T as GetFetchProp>::Property> + GetFetchProp + Sized + Send + Sync,
           <T as GetFetchProp>::Property: Sync + Send {
@@ -347,10 +336,7 @@ impl<T> Refetchable for T
     }
 
     #[cfg(feature = "async")]
-    async fn a_refetch(&self, client: &Client) -> Result<Self>
-        where T: 'async_trait,
-        <T as GetFetchProp>::Property: 'async_trait,
-    {
+    async fn a_refetch(&self, client: &Client) -> Result<Self> {
         Self::a_fetch(client, self.get_fetch_prop()).await
     }
 }
@@ -361,7 +347,6 @@ impl<T> Refetchable for T
 /// [`FetchInto`] for the other type.
 ///
 /// [`FetchInto`]: traits/trait.FetchInto.html
-#[cfg_attr(feature = "async", async_trait)]
 pub trait FetchFrom<T>: Sized {
     /// (Sync) Attempts to request to the API and return a new instance of the type being turned
     /// into.
@@ -420,7 +405,6 @@ pub trait FetchFrom<T>: Sized {
 /// implementation of this trait.
 ///
 /// [`FetchFrom`]: traits/trait.FetchFrom.html
-#[cfg_attr(feature = "async", async_trait)]
 pub trait FetchInto<T>: Sized {
     /// (Sync) Attempts to request to the API and return a new instance of the type being turned
     /// into.
@@ -447,12 +431,10 @@ pub trait FetchInto<T>: Sized {
     /// # Examples
     ///
     /// See [`FetchFrom::<T>::a_fetch_from`].
-    async fn a_fetch_into(&self, client: &Client) -> Result<T>
-        where T: 'async_trait;
+    async fn a_fetch_into(&self, client: &Client) -> Result<T>;
 }
 
 // FetchFrom implies FetchInto
-#[cfg_attr(feature = "async", async_trait)]
 impl<T, U> FetchInto<U> for T
     where T: Sync + Send, U: FetchFrom<T> + Sync + Send
 {
@@ -461,15 +443,12 @@ impl<T, U> FetchInto<U> for T
     }
 
     #[cfg(feature = "async")]
-    async fn a_fetch_into(&self, client: &Client) -> Result<U>
-        where U: 'async_trait
-    {
+    async fn a_fetch_into(&self, client: &Client) -> Result<U> {
         U::a_fetch_from(client, self).await
     }
 }
 
 // FetchFrom (and thus FetchInto) is reflexive
-#[cfg_attr(feature = "async", async_trait)]
 impl<T: Sync + Send + Clone> FetchFrom<T> for T {
     /// (Sync) Returns a copy of the current instance when attempting to fetch from itself.
     /// In order to re-fetch, see [`Refetchable`].

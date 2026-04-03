@@ -3,43 +3,97 @@
 
 use serde::{self, Serialize, Deserialize};
 
-/// A struct representing a brawler's star power. Note that, if **both** `players` and `brawlers`
-/// features are turned off, then this struct is also removed (it is required by both, so if neither
-/// are enabled anymore, this isn't either).
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+/// A struct representing a player or brawler icon.
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct Icon {
+    /// The icon's id.
+    #[serde(default)]
+    pub id: usize,
+}
+
+/// A struct representing a brawler's star power.
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[cfg(any(feature = "players", feature = "brawlers"))]
 pub struct StarPower {
+    /// The star power's id (an arbitrary number).
+    #[serde(default)]
+    pub id: usize,
 
     /// The star power name.
     #[serde(default)]
     pub name: String,
-
-    /// The star power's id (an arbitrary number).
-    #[serde(default)]
-    pub id: usize
 }
 
-impl Default for StarPower {
+/// A struct representing a brawler's gadget.
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[cfg(any(feature = "players", feature = "brawlers"))]
+pub struct Gadget {
+    /// The gadget's id.
+    #[serde(default)]
+    pub id: usize,
 
-    /// Returns an instance of `StarPower` with initial values.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use brawl_api::StarPower;
-    ///
-    /// assert_eq!(
-    ///     StarPower::default(),
-    ///     StarPower {
-    ///         name: String::from(""),
-    ///         id: 0,
-    ///     }
-    /// );
-    /// ```
-    fn default() -> StarPower {
-        StarPower {
-            name: String::from(""),
-            id: 0
-        }
-    }
+    /// The gadget's name.
+    #[serde(default)]
+    pub name: String,
+}
+
+/// A struct representing a brawler's gear.
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[cfg(any(feature = "players", feature = "brawlers"))]
+pub struct Gear {
+    /// The gear's id.
+    #[serde(default)]
+    pub id: usize,
+
+    /// The gear's name.
+    #[serde(default)]
+    pub name: String,
+
+    /// The gear's level.
+    #[serde(default)]
+    pub level: u8,
+}
+
+/// A struct representing a brawler's hyper charge.
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[cfg(any(feature = "players", feature = "brawlers"))]
+pub struct HyperCharge {
+    /// The hyper charge's id.
+    #[serde(default)]
+    pub id: usize,
+
+    /// The hyper charge's name.
+    #[serde(default)]
+    pub name: String,
+}
+
+/// A struct representing a brawler's equipped skin (from player brawler stats).
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[cfg(feature = "players")]
+pub struct Skin {
+    /// The skin's id.
+    #[serde(default)]
+    pub id: usize,
+
+    /// The skin's name.
+    #[serde(default)]
+    pub name: String,
+}
+
+/// A struct representing which ability upgrades a brawler has unlocked.
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg(feature = "players")]
+pub struct Buffies {
+    /// Whether the brawler has a gadget unlocked.
+    #[serde(default)]
+    pub gadget: bool,
+
+    /// Whether the brawler has a star power unlocked.
+    #[serde(default)]
+    pub star_power: bool,
+
+    /// Whether the brawler has a hyper charge unlocked.
+    #[serde(default)]
+    pub hyper_charge: bool,
 }

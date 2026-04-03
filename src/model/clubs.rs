@@ -2,11 +2,11 @@
 //! Included by the feature `"clubs"`; removing that feature will disable the usage of this module.
 
 #[cfg(feature = "async")]
-use async_trait::async_trait;
 
 use serde::{self, Serialize, Deserialize};
 
 use crate::traits::{PropFetchable, FetchFrom, GetFetchProp};
+use crate::model::common::Icon;
 use crate::error::Result;
 
 #[cfg(feature = "async")]
@@ -86,64 +86,50 @@ pub struct Club {
     #[serde(default)]
     pub description: Option<String>,
 
-    /// The club's trophies.
-    #[serde(default)]
-    pub trophies: usize,
-
-    /// The amount of trophies required to enter on this club, or 0 if it allows any amount.
-    #[serde(default)]
-    pub required_trophies: usize,
-
-    /// The members in this club, as a vector of [`ClubMember`] (note that the [`ClubMembers`]
-    /// struct is simply a smart pointer for `Vec<ClubMember>`).
-    ///
-    /// [`ClubMember`]: struct.ClubMember.html
-    /// [`ClubMembers`]: ./members/struct.ClubMembers.html
-    #[serde(default)]
-    #[serde(serialize_with="serialize_smt_pointer")]
-    #[serde(deserialize_with="deserialize_default_smt_pointer")]
-    pub members: ClubMembers, // Vec<ClubMember>,
-
     /// The type of club (see [`ClubType`] docs).
     ///
     /// [`ClubType`]: ./enum.ClubType.html
     #[serde(rename = "type")]
     #[serde(default)]
-    pub club_type: ClubType
+    pub club_type: ClubType,
+
+    /// The club's badge id.
+    #[serde(default)]
+    pub badge_id: usize,
+
+    /// The amount of trophies required to enter on this club, or 0 if it allows any amount.
+    #[serde(default)]
+    pub required_trophies: usize,
+
+    /// The club's trophies.
+    #[serde(default)]
+    pub trophies: usize,
+
+    /// The members in this club.
+    #[serde(default)]
+    #[serde(serialize_with="serialize_smt_pointer")]
+    #[serde(deserialize_with="deserialize_default_smt_pointer")]
+    pub members: ClubMembers,
+
+    /// Whether the club is family friendly.
+    #[serde(default)]
+    pub is_family_friendly: Option<bool>,
 }
 
 impl Default for Club {
 
 
-    /// Returns an instance of `Club` with initial values.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use brawl_api::{Club, ClubType, ClubMembers};
-    ///
-    /// assert_eq!(
-    ///     Club::default(),
-    ///     Club {
-    ///         tag: String::from(""),
-    ///         name: String::from(""),
-    ///         description: None,
-    ///         trophies: 0,
-    ///         required_trophies: 0,
-    ///         members: ClubMembers::default(),
-    ///         club_type: ClubType::Open,
-    ///     }
-    /// );
-    /// ```
     fn default() -> Club {
         Club {
             tag: String::from(""),
             name: String::from(""),
             description: None,
-            trophies: 0,
-            required_trophies: 0,
-            members: ClubMembers::default(),
             club_type: ClubType::Open,
+            badge_id: 0,
+            required_trophies: 0,
+            trophies: 0,
+            members: ClubMembers::default(),
+            is_family_friendly: None,
         }
     }
 }
@@ -156,7 +142,6 @@ impl GetFetchProp for Club {
     fn get_route(tag: &str) -> Route { Route::Club(auto_hashtag(tag)) }
 }
 
-#[cfg_attr(feature = "async", async_trait)]
 impl PropFetchable for Club {
     type Property = str;
 
@@ -228,10 +213,7 @@ impl PropFetchable for Club {
     /// [`Error::Ratelimited`]: error/enum.Error.html#variant.Ratelimited
     /// [`Error::Json`]: error/enum.Error.html#variant.Json
     #[cfg(feature="async")]
-    async fn a_fetch(client: &Client, tag: &'async_trait str) -> Result<Club>
-        where Self: 'async_trait,
-              Self::Property: 'async_trait,
-    {
+    async fn a_fetch(client: &Client, tag: &str) -> Result<Club> {
         let route = Club::get_route(tag);
         let mut club = a_fetch_route::<Club>(client, &route).await?;
         club.members.tag = club.tag.clone();
@@ -239,7 +221,6 @@ impl PropFetchable for Club {
     }
 }
 
-#[cfg_attr(feature = "async", async_trait)]
 #[cfg(feature = "players")]
 impl FetchFrom<PlayerClub> for Club {
     /// (Sync) Fetches a `Club` using data from a [`PlayerClub`] object.
@@ -258,7 +239,6 @@ impl FetchFrom<PlayerClub> for Club {
     }
 }
 
-#[cfg_attr(feature = "async", async_trait)]
 #[cfg(feature = "rankings")]
 impl FetchFrom<ClubRanking> for Club {
 
@@ -389,21 +369,22 @@ pub struct ClubMember {
     #[serde(default)]
     pub name: String,
 
+    /// The member's name color, as an integer (Default is 0xffffff = 16777215).
+    #[serde(default = "oxffffff_default")]
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub name_color: u64,
+
+    /// The member's role in the guild.
+    #[serde(default)]
+    pub role: ClubMemberRole,
+
     /// The member's trophies.
     #[serde(default)]
     pub trophies: usize,
 
-    /// The member's role in the guild. (Default is [`ClubMemberRole::Member`])
-    ///
-    /// [`ClubMemberRole::Member`]: ./enum.ClubMemberRole.html#variant.Member
+    /// The member's icon.
     #[serde(default)]
-    pub role: ClubMemberRole,
-
-    /// The member's name color, as an integer (Default is 0xffffff = 16777215 - this is used
-    /// when the data is not available).
-    #[serde(default = "oxffffff_default")]
-    #[serde(deserialize_with = "deserialize_number_from_string")]  // parse num
-    pub name_color: u64
+    pub icon: Option<Icon>,
 }
 
 impl PartialOrd for ClubMember {
@@ -454,31 +435,14 @@ impl Ord for ClubMember {
 
 impl Default for ClubMember {
 
-    /// Returns an instance of `ClubMember` with initial values.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use brawl_api::model::{ClubMember, ClubMemberRole};
-    ///
-    /// assert_eq!(
-    ///     ClubMember::default(),
-    ///     ClubMember {
-    ///         tag: String::from(""),
-    ///         name: String::from(""),
-    ///         trophies: 0,
-    ///         role: ClubMemberRole::default(),
-    ///         name_color: 0xff_ff_ff
-    ///     }
-    /// );
-    /// ```
     fn default() -> ClubMember {
         ClubMember {
             tag: String::from(""),
             name: String::from(""),
-            trophies: 0,
+            name_color: 0xff_ff_ff,
             role: ClubMemberRole::default(),
-            name_color: 0xff_ff_ff
+            trophies: 0,
+            icon: None,
         }
     }
 }
@@ -608,7 +572,6 @@ pub mod members {
         }
     }
 
-    #[cfg_attr(feature = "async", async_trait)]
     impl PropFetchable for ClubMembers {
         type Property = str;
 
@@ -686,10 +649,7 @@ pub mod members {
         /// [`Error::Ratelimited`]: error/enum.Error.html#variant.Ratelimited
         /// [`Error::Json`]: error/enum.Error.html#variant.Json
         #[cfg(feature="async")]
-        async fn a_fetch(client: &Client, tag: &'async_trait str) -> Result<ClubMembers>
-            where Self: 'async_trait,
-                  Self::Property: 'async_trait,
-        {
+        async fn a_fetch(client: &Client, tag: &str) -> Result<ClubMembers> {
             let route = ClubMembers::get_route(tag);
             let mut members = a_fetch_route::<ClubMembers>(client, &route).await?;
             members.tag = tag.to_owned();
@@ -803,46 +763,53 @@ mod tests {
                             name: String::from("Member #1"),
                             name_color: 0xffff8afb,
                             role: ClubMemberRole::VicePresident,
-                            trophies: 500
+                            trophies: 500,
+                            icon: None,
                         },
                         ClubMember {
                             tag: String::from("#CCCCCCCCCC"),
                             name: String::from("Member #2"),
                             name_color: 0xff1ba5f5,
                             role: ClubMemberRole::President,
-                            trophies: 200
+                            trophies: 200,
+                            icon: None,
                         },
                         ClubMember {
                             tag: String::from("#VVVVVVVVV"),
                             name: String::from("Member #3"),
                             name_color: 0xffffff,
                             role: ClubMemberRole::Member,
-                            trophies: 8500
+                            trophies: 8500,
+                            icon: None,
                         },
                         ClubMember {
                             tag: String::from("#9999999999"),
                             name: String::from("Member #4"),
                             name_color: 0xff4ddba2,
                             role: ClubMemberRole::Member,
-                            trophies: 20000
+                            trophies: 20000,
+                            icon: None,
                         },
                         ClubMember {
                             tag: String::from("#UUUUUU888"),
                             name: String::from("Member #5"),
                             name_color: 0xff1ba5f5,
                             role: ClubMemberRole::Senior,
-                            trophies: 4500
+                            trophies: 4500,
+                            icon: None,
                         },
                         ClubMember {
                             tag: String::from("#JJJJJJJJJ"),
                             name: String::from("Member ██▬█"),
                             name_color: 0xff1ba5f5,
                             role: ClubMemberRole::Member,
-                            trophies: 26300
+                            trophies: 26300,
+                            icon: None,
                         }
                     ],
                     ..ClubMembers::default()
-                }
+                },
+                ..Club::default()
             }
         );
 
@@ -913,47 +880,120 @@ mod tests {
                         name: String::from("Member #1"),
                         name_color: 0xffff8afb,
                         role: ClubMemberRole::VicePresident,
-                        trophies: 500
+                        trophies: 500,
+                        icon: None,
                     },
                     ClubMember {
                         tag: String::from("#CCCCCCCCCC"),
                         name: String::from("Member #2"),
                         name_color: 0xff1ba5f5,
                         role: ClubMemberRole::President,
-                        trophies: 200
+                        trophies: 200,
+                        icon: None,
                     },
                     ClubMember {
                         tag: String::from("#VVVVVVVVV"),
                         name: String::from("Member #3"),
                         name_color: 0xffffff,
                         role: ClubMemberRole::Member,
-                        trophies: 8500
+                        trophies: 8500,
+                        icon: None,
                     },
                     ClubMember {
                         tag: String::from("#9999999999"),
                         name: String::from("Member #4"),
                         name_color: 0xff4ddba2,
                         role: ClubMemberRole::Member,
-                        trophies: 20000
+                        trophies: 20000,
+                        icon: None,
                     },
                     ClubMember {
                         tag: String::from("#UUUUUU888"),
                         name: String::from("Member #5"),
                         name_color: 0xff1ba5f5,
                         role: ClubMemberRole::Senior,
-                        trophies: 4500
+                        trophies: 4500,
+                        icon: None,
                     },
                     ClubMember {
                         tag: String::from("#JJJJJJJJJ"),
                         name: String::from("Member ██▬█"),
                         name_color: 0xff1ba5f5,
                         role: ClubMemberRole::Member,
-                        trophies: 26300
+                        trophies: 26300,
+                        icon: None,
                     }
                 ],
                 ..ClubMembers::default()
             }
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn club_new_fields_deser() -> StdResult<(), Box<dyn ::std::error::Error>> {
+        let json = r##"{
+  "tag": "#CLUB123",
+  "name": "Example Club",
+  "description": "Test club",
+  "type": "closed",
+  "badgeId": 8000011,
+  "requiredTrophies": 5000,
+  "trophies": 100000,
+  "isFamilyFriendly": true,
+  "members": [
+    {
+      "tag": "#PLAYER123",
+      "name": "ExamplePlayer",
+      "nameColor": "0xfff9c908",
+      "role": "president",
+      "trophies": 67383,
+      "icon": { "id": 28000272 }
+    }
+  ]
+}"##;
+        let club: Club = serde_json::from_str(json).map_err(BrawlError::Json)?;
+
+        assert_eq!(club.tag, "#CLUB123");
+        assert_eq!(club.badge_id, 8000011);
+        assert_eq!(club.is_family_friendly, Some(true));
+        assert_eq!(club.description, Some(String::from("Test club")));
+        assert_eq!(club.club_type, ClubType::Closed);
+        assert_eq!(club.members.len(), 1);
+        assert_eq!(club.members[0].icon, Some(Icon { id: 28000272 }));
+        assert_eq!(club.members[0].trophies, 67383);
+
+        Ok(())
+    }
+
+    #[test]
+    fn club_member_with_icon_deser() -> StdResult<(), Box<dyn ::std::error::Error>> {
+        let json = r##"{
+  "items": [
+    {
+      "tag": "#ABC123",
+      "name": "Player1",
+      "nameColor": "0xffffffff",
+      "role": "senior",
+      "trophies": 12000,
+      "icon": { "id": 28000100 }
+    },
+    {
+      "tag": "#DEF456",
+      "name": "Player2",
+      "nameColor": "0xff1ba5f5",
+      "role": "member",
+      "trophies": 8000
+    }
+  ],
+  "paging": { "cursors": {} }
+}"##;
+        let members: ClubMembers = serde_json::from_str(json).map_err(BrawlError::Json)?;
+
+        assert_eq!(members.len(), 2);
+        assert_eq!(members[0].icon, Some(Icon { id: 28000100 }));
+        assert_eq!(members[1].icon, None);
 
         Ok(())
     }

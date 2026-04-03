@@ -96,21 +96,19 @@ pub mod _impls {  // public so its implementations can be accessed
         /// [`Error::ParseTimeLike`]: ../error/enum.Error.html#variant.ParseTimeLike
         /// [`constants::TIMELIKE_FORMAT`]: ../constants/constant.TIMELIKE_FORMAT.html
         pub fn parse(&self) -> Result<DateTime<Utc>> {
-            Utc.datetime_from_str(
-                &self.0, TIMELIKE_FORMAT
-            ).map_err(|e| {
-                Error::ParseTimeLike {
-                    reason: e.to_string(),
-                    offender: Some(self.0.clone()),
-                    original_err: Some(e)
-                }
-            })
+            NaiveDateTime::parse_from_str(&self.0, TIMELIKE_FORMAT)
+                .map(|ndt| ndt.and_utc())
+                .map_err(|e| {
+                    Error::ParseTimeLike {
+                        reason: e.to_string(),
+                        offender: Some(self.0.clone()),
+                        original_err: Some(e)
+                    }
+                })
         }
     }
 }
 
-#[cfg(feature = "datetime")]
-pub use _impls::*;
 
 ///////////////////////////////////   tests   ///////////////////////////////////
 
@@ -126,8 +124,11 @@ mod tests {
         let time_str = "20200129T042143.000Z";
         let time = TimeLike(String::from(time_str));
 
-        let dt: DateTime<Utc> = Utc
-            .ymd(2020, 01, 29).and_hms(04, 21, 43);
+        let dt: DateTime<Utc> = NaiveDate::from_ymd_opt(2020, 1, 29)
+            .unwrap()
+            .and_hms_opt(4, 21, 43)
+            .unwrap()
+            .and_utc();
 
         assert_eq!(time.parse()?, dt);
 
