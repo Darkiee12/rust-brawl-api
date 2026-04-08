@@ -1,0 +1,98 @@
+{
+  "items": [
+    {
+      "battleTime": "20250201T233210.000Z",
+      "event": {
+        "id": 15000007,
+        "mode": "gemGrab",
+        "modeId": 0,
+        "map": "TestMap1"
+      },
+      "battle": {
+        "mode": "gemGrab",
+        "type": "championshipChallenge",
+        "result": "defeat",
+        "duration": 145,
+        "starPlayer": {
+          "tag": "#STAR001",
+          "name": "TestPlayerStar",
+          "brawler": {
+            "id": 16000068,
+            "name": "TEST_STAR_BRAWLER",
+            "power": 11,
+            "trophies": 200
+          }
+        },
+        "teams": [
+          [
+            {
+              "tag": "#AAAAAAA",
+              "name": "TestPlayer1",
+              "brawler": {
+                "id": 16000088,
+                "name": null,
+                "power": 11,
+                "trophies": 200
+              }
+            },
+            {
+              "tag": "#AAA0002",
+              "name": "TestPlayer2",
+              "brawler": {
+                "id": 16000023,
+                "name": "TEST_BRAWLER_2",
+                "power": 11,
+                "trophies": 201
+              }
+            },
+            {
+              "tag": "#AAA0003",
+              "name": "TestPlayer3",
+              "brawler": {
+                "id": 16000005,
+                "name": "TEST_BRAWLER_3",
+                "power": 11,
+                "trophies": 202
+              }
+            }
+          ],
+          [
+            {
+              "tag": "#BBB0001",
+              "name": "TestPlayer4",
+              "brawler": {
+                "id": 16000026,
+                "name": "TEST_BRAWLER_4",
+                "power": 11,
+                "trophies": 200
+              }
+            },
+            {
+              "tag": "#BBB0002",
+              "name": "TestPlayer5",
+              "brawler": {
+                "id": 16000014,
+                "name": "TEST_BRAWLER_5",
+                "power": 11,
+                "trophies": 203
+              }
+            },
+            {
+              "tag": "#BBB0003",
+              "name": "TestPlayer6",
+              "brawler": {
+                "id": 16000019,
+                "name": "TEST_BRAWLER_6",
+                "power": 11,
+                "trophies": 204
+              }
+            }
+          ]
+        ]
+      }
+    }
+  ],
+  "paging": {
+    "cursors": {}
+  }
+}

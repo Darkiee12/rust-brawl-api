@@ -3,14 +3,11 @@
 
 use serde::{self, Serialize, Deserialize};
 
-
 #[cfg(feature = "async")]
-
+use async_trait::async_trait;
 
 #[cfg(feature = "async")]
 use crate::util::a_fetch_route;
-
-#[cfg(feature = "async")]
 
 use crate::traits::{FetchFrom, PropFetchable, GetFetchProp};
 use crate::error::{Result};
@@ -144,6 +141,7 @@ impl GetFetchProp for Player {
     fn get_route(tag: &str) -> Route { Route::Player(auto_hashtag(tag)) }
 }
 
+#[cfg_attr(feature = "async", async_trait)]
 impl PropFetchable for Player {
     type Property = str;
 
@@ -213,12 +211,16 @@ impl PropFetchable for Player {
     /// [`Error::Ratelimited`]: error/enum.Error.html#variant.Ratelimited
     /// [`Error::Json`]: error/enum.Error.html#variant.Json
     #[cfg(feature="async")]
-    async fn a_fetch(client: &Client, tag: &str) -> Result<Player> {
-        let route = Player::get_route(tag);
+    async fn a_fetch(client: &Client, tag: &'async_trait str) -> Result<Player>
+        where Self: 'async_trait,
+              Self::Property: 'async_trait,
+    {
+        let route = Player::get_route(&tag);
         a_fetch_route::<Player>(client, &route).await
     }
 }
 
+#[cfg_attr(feature = "async", async_trait)]
 #[cfg(feature = "clubs")]
 impl FetchFrom<ClubMember> for Player {
     /// (Sync) Fetches a `Player` instance, given a preexisting `ClubMember` instance.
@@ -277,6 +279,7 @@ impl FetchFrom<ClubMember> for Player {
     }
 }
 
+#[cfg_attr(feature = "async", async_trait)]
 impl FetchFrom<BattlePlayer> for Player {
     /// (Async) Fetches a `Player` instance, given a preexisting `BattlePlayer` instance.
     ///
@@ -352,6 +355,7 @@ impl FetchFrom<BattlePlayer> for Player {
     }
 }
 
+#[cfg_attr(feature = "async", async_trait)]
 #[cfg(feature = "rankings")]
 impl FetchFrom<PlayerRanking> for Player {
 
@@ -479,7 +483,7 @@ pub struct PlayerBrawlerStat {
 
     /// Which ability upgrades the brawler has unlocked.
     #[serde(default)]
-    pub buffies: Option<Buffies>,
+    pub buffies: Buffies,
 }
 
 impl Default for PlayerBrawlerStat {
@@ -499,7 +503,7 @@ impl Default for PlayerBrawlerStat {
             gadgets: vec![],
             gears: vec![],
             hyper_charges: vec![],
-            buffies: None,
+            buffies: Buffies::default(),
         }
     }
 }
@@ -508,11 +512,25 @@ impl Default for PlayerBrawlerStat {
 
 #[cfg(test)]
 mod tests {
-    use std::result::Result as StdResult;
     use super::{Player, PlayerClub, PlayerBrawlerStat, StarPower};
-    use crate::model::common::{Icon, Gadget, Gear, HyperCharge, Skin, Buffies};
     use crate::error::Error as BrawlError;
+    use crate::model::common::{Buffies, Gadget, Gear, HyperCharge, Icon, Skin};
     use serde_json;
+    use std::fs::read_to_string;
+    use std::result::Result as StdResult;
+
+    mod player_with_club_expected {
+        include!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/players/player_with_club_expected.rs"
+        ));
+    }
+    mod player_without_club_empty_object_expected {
+        include!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/players/player_without_club_empty_object_expected.rs"
+        ));
+    }
 
     #[test]
     fn players_deser() -> StdResult<(), Box<dyn ::std::error::Error>> {
@@ -701,11 +719,11 @@ mod tests {
         assert_eq!(brawler.gears[0], Gear { id: 62000002, name: String::from("DAMAGE"), level: 3 });
         assert_eq!(brawler.hyper_charges.len(), 1);
         assert_eq!(brawler.hyper_charges[0], HyperCharge { id: 23000613, name: String::from("DOUBLE BARREL") });
-        assert_eq!(brawler.buffies, Some(Buffies {
+        assert_eq!(brawler.buffies, Buffies {
             gadget: true,
             star_power: true,
             hyper_charge: true,
-        }));
+        });
 
         Ok(())
     }
@@ -740,6 +758,49 @@ mod tests {
     }
 
     #[test]
+    fn player_brawler_missing_buffies_defaults_to_false() -> StdResult<(), Box<dyn ::std::error::Error>> {
+        let json = r##"{
+  "tag": "#MINIMAL2",
+  "name": "MinPlayer2",
+  "nameColor": "0xffffffff",
+  "trophies": 200,
+  "highestTrophies": 200,
+  "expLevel": 1,
+  "expPoints": 0,
+  "isQualifiedFromChampionshipChallenge": false,
+  "3vs3Victories": 0,
+  "soloVictories": 0,
+  "duoVictories": 0,
+  "bestRoboRumbleTime": 0,
+  "bestTimeAsBigBrawler": 0,
+  "brawlers": [
+    {
+      "id": 16000000,
+      "name": "SHELLY",
+      "power": 9,
+      "rank": 20,
+      "trophies": 500,
+      "highestTrophies": 549,
+      "starPowers": []
+    }
+  ]
+}"##;
+        let player: Player = serde_json::from_str(json).map_err(BrawlError::Json)?;
+
+        assert_eq!(player.brawlers.len(), 1);
+        assert_eq!(
+            player.brawlers[0].buffies,
+            Buffies {
+                gadget: false,
+                star_power: false,
+                hyper_charge: false,
+            }
+        );
+
+        Ok(())
+    }
+
+    #[test]
     fn player_roundtrip_serialization() -> StdResult<(), Box<dyn ::std::error::Error>> {
         let player = Player {
             tag: String::from("#TEST"),
@@ -752,6 +813,26 @@ mod tests {
         let json = serde_json::to_string(&player)?;
         let deser: Player = serde_json::from_str(&json)?;
         assert_eq!(player, deser);
+
+        Ok(())
+    }
+
+    #[test]
+    fn player_with_club_fixture_deser() -> StdResult<(), Box<dyn ::std::error::Error>> {
+        let json = read_to_string("tests/fixtures/players/player_with_club.json")?;
+        let player: Player = serde_json::from_str(&json).map_err(BrawlError::Json)?;
+
+        assert_eq!(player, player_with_club_expected::expected());
+
+        Ok(())
+    }
+
+    #[test]
+    fn player_without_club_empty_object_fixture_deser() -> StdResult<(), Box<dyn ::std::error::Error>> {
+        let json = read_to_string("tests/fixtures/players/player_without_club_empty_object.json")?;
+        let player: Player = serde_json::from_str(&json).map_err(BrawlError::Json)?;
+
+        assert_eq!(player, player_without_club_empty_object_expected::expected());
 
         Ok(())
     }

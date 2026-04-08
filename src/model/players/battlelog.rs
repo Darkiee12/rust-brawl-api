@@ -1,19 +1,67 @@
 //! Contains models related to the `/players/:tag/battlelog` endpoint of the Brawl Stars API.
 //! Included by the feature `"players"`; removing that feature will disable the usage of this module.
 
-use std::ops::{Deref, DerefMut};
-use crate::traits::{GetFetchProp, PropFetchable, FetchFrom};
-use crate::http::routes::Route;
-use crate::util::{fetch_route, a_fetch_route, auto_hashtag};
-use serde::{self, Serialize, Deserialize};
 use crate::error::Result;
+use crate::http::routes::Route;
 use crate::serde::one_default;
+use crate::traits::{FetchFrom, GetFetchProp, PropFetchable};
+use crate::util::{a_fetch_route, auto_hashtag, fetch_route};
+use serde::{self, Deserialize, Deserializer, Serialize};
+use std::ops::{Deref, DerefMut};
 
-#[cfg(feature = "async")]
 use crate::http::Client;
+#[cfg(feature = "async")]
+use async_trait::async_trait;
 
 use super::player::Player;
 use crate::TimeLike;
+
+fn deserialize_null_string_as_default<'de, D>(
+    deserializer: D,
+) -> ::std::result::Result<String, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = Option::<String>::deserialize(deserializer)?;
+    Ok(value.unwrap_or_else(|| String::from("UNKNOWN")))
+}
+
+fn deserialize_null_string_as_empty<'de, D>(
+    deserializer: D,
+) -> ::std::result::Result<String, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = Option::<String>::deserialize(deserializer)?;
+    Ok(value.unwrap_or_default())
+}
+
+// Sentinel value for trophies and power of a brawler in friendly mode returns -1.
+fn deserialize_u8_allow_negative_default_one<'de, D>(
+    deserializer: D,
+) -> ::std::result::Result<u8, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = Option::<i64>::deserialize(deserializer)?;
+    match value {
+        Some(v) if v >= 0 => Ok(u8::try_from(v).unwrap_or_default()),
+        _ => Ok(0),
+    }
+}
+
+fn deserialize_usize_allow_negative_default_zero<'de, D>(
+    deserializer: D,
+) -> ::std::result::Result<usize, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = Option::<i64>::deserialize(deserializer)?;
+    match value {
+        Some(v) if v >= 0 => Ok(usize::try_from(v).unwrap_or_default()),
+        _ => Ok(0),
+    }
+}
 
 // region:BattleLog
 
@@ -30,12 +78,12 @@ use crate::TimeLike;
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BattleLog {
     /// The tag of the player whose BattleLog (most recent battles) was fetched.
-    #[serde(skip)]  // artificial
+    #[serde(skip)] // artificial
     pub tag: String,
 
     /// The items (battles) of this battle log.
     #[serde(default)]
-    pub items: Vec<Battle>
+    pub items: Vec<Battle>,
 }
 
 impl Deref for BattleLog {
@@ -108,6 +156,7 @@ impl GetFetchProp for BattleLog {
     }
 }
 
+#[cfg_attr(feature = "async", async_trait)]
 impl FetchFrom<Player> for BattleLog {
     /// (Sync) Fetches a given player's battlelog (a `BattleLog` instance) by using data from
     /// an existing [`Player`] instance. (See [`BattleLog::fetch`] for more details.)
@@ -169,6 +218,7 @@ impl FetchFrom<Player> for BattleLog {
     }
 }
 
+#[cfg_attr(feature = "async", async_trait)]
 impl PropFetchable for BattleLog {
     type Property = str;
 
@@ -239,8 +289,12 @@ impl PropFetchable for BattleLog {
     /// [`Error::Status`]: error/enum.Error.html#variant.Status
     /// [`Error::Ratelimited`]: error/enum.Error.html#variant.Ratelimited
     /// [`Error::Json`]: error/enum.Error.html#variant.Json
-    #[cfg(feature="async")]
-    async fn a_fetch(client: &Client, tag: &str) -> Result<BattleLog> {
+    #[cfg(feature = "async")]
+    async fn a_fetch(client: &Client, tag: &'async_trait str) -> Result<BattleLog>
+    where
+        Self: 'async_trait,
+        Self::Property: 'async_trait,
+    {
         let route = BattleLog::get_route(tag);
         let mut battle_log = a_fetch_route::<BattleLog>(client, &route).await?;
         battle_log.tag = tag.to_owned();
@@ -271,7 +325,6 @@ pub struct Battle {
 }
 
 impl Default for Battle {
-
     /// Returns a default `Battle` instance, with all default values initialized.
     ///
     /// # Examples
@@ -292,7 +345,7 @@ impl Default for Battle {
         Battle {
             battle_time: TimeLike::default(),
             event: BattleEvent::default(),
-            result: BattleResultInfo::default()
+            result: BattleResultInfo::default(),
         }
     }
 }
@@ -316,7 +369,7 @@ pub struct BattleEvent {
     pub mode_id: Option<usize>,
 
     /// The name of the map where this battle happened.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_null_string_as_empty")]
     pub map: String,
 }
 
@@ -324,7 +377,9 @@ impl BattleEvent {
     /// Returns a default BattleEvent - see [`BattleEvent::default`].
     ///
     /// [`BattleEvent::default`]: #method.default
-    pub fn new() -> BattleEvent { BattleEvent::default() }
+    pub fn new() -> BattleEvent {
+        BattleEvent::default()
+    }
 }
 
 impl Default for BattleEvent {
@@ -442,7 +497,7 @@ pub struct BattleResultInfo {
     /// If this was a solo match or a mode without teams, such as Showdown, then this is a vector
     /// with all the players in the match. Otherwise, `None`.
     #[serde(default)]
-    pub players: Option<Vec<BattlePlayer>>
+    pub players: Option<Vec<BattlePlayer>>,
 }
 
 impl Default for BattleResultInfo {
@@ -543,14 +598,20 @@ pub struct BattleBrawler {
     pub id: usize,
 
     /// The brawler's name (e.g. "PENNY", "ROSA", "BROCK"...)
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_null_string_as_default")]
     pub name: String,
 
     /// The brawler's power level.
-    #[serde(default = "one_default")]
+    #[serde(
+        default = "one_default",
+        deserialize_with = "deserialize_u8_allow_negative_default_one"
+    )]
     pub power: u8,
 
-    #[serde(default)]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_usize_allow_negative_default_zero"
+    )]
     pub trophies: usize,
 }
 
@@ -586,275 +647,105 @@ impl Default for BattleBrawler {
 
 #[cfg(test)]
 mod tests {
+    use super::BattleLog;
     use serde_json;
-    use crate::time::TimeLike;
-    use super::{
-        BattleLog, BattleBrawler, BattlePlayer, Battle, BattleResultInfo, BattleEvent, BattleOutcome
-    };
+    use std::fs::read_to_string;
+
+    mod battlelog_deser_expected {
+        include!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/battlelog/battlelog_deser_expected.rs"
+        ));
+    }
+    mod mode_id_present_expected {
+        include!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/battlelog/mode_id_present_expected.rs"
+        ));
+    }
+    mod mode_id_missing_expected {
+        include!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/battlelog/mode_id_missing_expected.rs"
+        ));
+    }
+    mod null_brawler_name_expected {
+        include!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/battlelog/null_brawler_name_expected.rs"
+        ));
+    }
+    mod null_event_map_expected {
+        include!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/battlelog/null_event_map_expected.rs"
+        ));
+    }
+    mod friendly_negative_stats_expected {
+        include!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/battlelog/friendly_negative_stats_expected.rs"
+        ));
+    }
 
     /// Tests for battlelog deserialization from API-provided JSON.
     #[test]
     fn battlelog_deser() -> Result<(), Box<dyn ::std::error::Error>> {
+        let battlelog_json_s = read_to_string("tests/fixtures/battlelog/battlelog_deser.json")?;
+        let battle_log = serde_json::from_str::<BattleLog>(&battlelog_json_s)?;
 
-        let battlelog_json_s = r##"{
-  "items": [
-    {
-      "battleTime": "20200131T003432.000Z",
-      "event": {
-        "id": 15000163,
-        "mode": "brawlBall",
-        "map": "Coarse Course"
-      },
-      "battle": {
-        "mode": "brawlBall",
-        "type": "ranked",
-        "result": "victory",
-        "duration": 96,
-        "trophyChange": 8,
-        "starPlayer": {
-          "tag": "#CCCCCCCC",
-          "name": "User",
-          "brawler": {
-            "id": 16000008,
-            "name": "NITA",
-            "power": 10,
-            "trophies": 500
-          }
-        },
-        "teams": [
-          [
-            {
-              "tag": "#CCCCCCCC",
-              "name": "User",
-              "brawler": {
-                "id": 16000008,
-                "name": "NITA",
-                "power": 10,
-                "trophies": 500
-              }
-            },
-            {
-              "tag": "#RRRAAALLL",
-              "name": "Other User",
-              "brawler": {
-                "id": 16000001,
-                "name": "COLT",
-                "power": 8,
-                "trophies": 510
-              }
-            },
-            {
-              "tag": "#GGGGGGGGG",
-              "name": "Another User",
-              "brawler": {
-                "id": 16000018,
-                "name": "DARRYL",
-                "power": 10,
-                "trophies": 520
-              }
-            }
-          ],
-          [
-            {
-              "tag": "#777777777",
-              "name": "User User User",
-              "brawler": {
-                "id": 16000032,
-                "name": "MAX",
-                "power": 10,
-                "trophies": 500
-              }
-            },
-            {
-              "tag": "#SUVSUVSUV",
-              "name": "User.User?!",
-              "brawler": {
-                "id": 16000024,
-                "name": "ROSA",
-                "power": 9,
-                "trophies": 400
-              }
-            },
-            {
-              "tag": "#QCPJ09J",
-              "name": "пользователь",
-              "brawler": {
-                "id": 16000028,
-                "name": "SANDY",
-                "power": 10,
-                "trophies": 450
-              }
-            }
-          ]
-        ]
-      }
-    }
-  ]
-}"##;
-        let battle_log = serde_json::from_str::<BattleLog>(battlelog_json_s)?;
-
-        assert_eq!(
-            battle_log,
-            BattleLog {
-                items: vec![
-                    Battle {
-                        battle_time: TimeLike(String::from("20200131T003432.000Z")),
-                        event: BattleEvent {
-                            id: 15000163,
-                            mode: String::from("brawlBall"),
-                            mode_id: None,
-                            map: String::from("Coarse Course")
-                        },
-                        result: BattleResultInfo {
-                            mode: String::from("brawlBall"),
-                            battle_type: Some(String::from("ranked")),
-                            result: Some(BattleOutcome::Victory),
-                            duration: 96,
-                            trophy_change: 8,
-                            star_player: Some(BattlePlayer {
-                                tag: String::from("#CCCCCCCC"),
-                                name: String::from("User"),
-                                brawler: BattleBrawler {
-                                    id: 16000008,
-                                    name: String::from("NITA"),
-                                    power: 10,
-                                    trophies: 500
-                                }
-                            }),
-                            teams: Some(vec![
-                                vec![
-                                    BattlePlayer {
-                                        tag: String::from("#CCCCCCCC"),
-                                        name: String::from("User"),
-                                        brawler: BattleBrawler {
-                                            id: 16000008,
-                                            name: String::from("NITA"),
-                                            power: 10,
-                                            trophies: 500
-                                        }
-                                    },
-                                    BattlePlayer {
-                                        tag: String::from("#RRRAAALLL"),
-                                        name: String::from("Other User"),
-                                        brawler: BattleBrawler {
-                                            id: 16000001,
-                                            name: String::from("COLT"),
-                                            power: 8,
-                                            trophies: 510
-                                        }
-                                    },
-                                    BattlePlayer {
-                                        tag: String::from("#GGGGGGGGG"),
-                                        name: String::from("Another User"),
-                                        brawler: BattleBrawler {
-                                            id: 16000018,
-                                            name: String::from("DARRYL"),
-                                            power: 10,
-                                            trophies: 520
-                                        }
-                                    }
-                                ],
-                                vec![
-                                    BattlePlayer {
-                                        tag: String::from("#777777777"),
-                                        name: String::from("User User User"),
-                                        brawler: BattleBrawler {
-                                            id: 16000032,
-                                            name: String::from("MAX"),
-                                            power: 10,
-                                            trophies: 500
-                                        }
-                                    },
-                                    BattlePlayer {
-                                        tag: String::from("#SUVSUVSUV"),
-                                        name: String::from("User.User?!"),
-                                        brawler: BattleBrawler {
-                                            id: 16000024,
-                                            name: String::from("ROSA"),
-                                            power: 9,
-                                            trophies: 400
-                                        }
-                                    },
-                                    BattlePlayer {
-                                        tag: String::from("#QCPJ09J"),
-                                        name: String::from("пользователь"),
-                                        brawler: BattleBrawler {
-                                            id: 16000028,
-                                            name: String::from("SANDY"),
-                                            power: 10,
-                                            trophies: 450
-                                        }
-                                    }
-                                ]
-                            ]), ..BattleResultInfo::default()
-                        }
-                    }
-                ],
-                tag: String::from(""),
-            }
-        );
+        assert_eq!(battle_log, battlelog_deser_expected::expected());
 
         Ok(())
     }
 
     #[test]
     fn battlelog_mode_id_deser() -> Result<(), Box<dyn ::std::error::Error>> {
-        let json = r##"{
-  "items": [{
-    "battleTime": "20250401T120000.000Z",
-    "event": {
-      "id": 15000007,
-      "mode": "gemGrab",
-      "modeId": 0,
-      "map": "Hard Rock Mine"
-    },
-    "battle": {
-      "mode": "gemGrab",
-      "type": "ranked",
-      "result": "victory",
-      "duration": 120,
-      "trophyChange": 10
-    }
-  }]
-}"##;
-        let log: BattleLog = serde_json::from_str(json)?;
+        let json = read_to_string("tests/fixtures/battlelog/mode_id_present.json")?;
+        let log: BattleLog = serde_json::from_str(&json)?;
 
-        assert_eq!(log.items.len(), 1);
-        let battle = &log.items[0];
-        assert_eq!(battle.event.id, 15000007);
-        assert_eq!(battle.event.mode, "gemGrab");
-        assert_eq!(battle.event.mode_id, Some(0));
-        assert_eq!(battle.event.map, "Hard Rock Mine");
-        assert_eq!(battle.result.mode, "gemGrab");
-        assert_eq!(battle.result.trophy_change, 10);
+        assert_eq!(log, mode_id_present_expected::expected());
 
         Ok(())
     }
 
     #[test]
     fn battlelog_missing_mode_id() -> Result<(), Box<dyn ::std::error::Error>> {
-        let json = r##"{
-  "items": [{
-    "battleTime": "20250401T120000.000Z",
-    "event": {
-      "id": 15000005,
-      "mode": "bounty",
-      "map": "Shooting Star"
-    },
-    "battle": {
-      "mode": "bounty",
-      "type": "ranked",
-      "result": "defeat",
-      "duration": 90,
-      "trophyChange": -5
-    }
-  }]
-}"##;
-        let log: BattleLog = serde_json::from_str(json)?;
+        let json = read_to_string("tests/fixtures/battlelog/mode_id_missing.json")?;
+        let log: BattleLog = serde_json::from_str(&json)?;
 
-        assert_eq!(log.items[0].event.mode_id, None);
-        assert_eq!(log.items[0].result.result, Some(BattleOutcome::Defeat));
-        assert_eq!(log.items[0].result.trophy_change, -5);
+        assert_eq!(log, mode_id_missing_expected::expected());
+
+        Ok(())
+    }
+
+    #[test]
+    fn battlelog_null_brawler_name_defaults_to_unknown() -> Result<(), Box<dyn ::std::error::Error>>
+    {
+        let battlelog_json_s = read_to_string("tests/fixtures/battlelog/null_brawler_name.json")?;
+        let battle_log = serde_json::from_str::<BattleLog>(&battlelog_json_s)?;
+
+        assert_eq!(battle_log, null_brawler_name_expected::expected());
+
+        Ok(())
+    }
+
+    #[test]
+    fn battlelog_null_event_map_defaults_to_empty() -> Result<(), Box<dyn ::std::error::Error>> {
+        let battlelog_json_s = read_to_string("tests/fixtures/battlelog/null_event_map.json")?;
+        let battle_log = serde_json::from_str::<BattleLog>(&battlelog_json_s)?;
+
+        assert_eq!(battle_log, null_event_map_expected::expected());
+
+        Ok(())
+    }
+
+    #[test]
+    fn battlelog_negative_brawler_stats_default() -> Result<(), Box<dyn ::std::error::Error>> {
+        let battlelog_json_s = read_to_string("tests/fixtures/battlelog/friendly_negative_stats.json")?;
+        let battle_log = serde_json::from_str::<BattleLog>(&battlelog_json_s)?;
+
+        assert_eq!(battle_log, friendly_negative_stats_expected::expected());
 
         Ok(())
     }

@@ -163,9 +163,9 @@ impl From<::chrono::ParseError> for Error {
 
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Error::Json(ref e) => e.fmt(f),
-            Error::Request(ref e) => e.fmt(f),
+        match self {
+            Error::Json(e) => e.fmt(f),
+            Error::Request(e) => e.fmt(f),
             _ => f.write_str(&*self.description()),
             // _ => f.write_str(self.description())
         }
@@ -177,13 +177,13 @@ impl Display for Error {
 impl StdError for Error {
 
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
-        match *self {
-            Error::Json(ref e) => Some(e),
-            Error::Url(ref e) => Some(e),
-            Error::Request(ref e) => Some(e),
+        match self {
+            Error::Json(e) => Some(e),
+            Error::Url(e) => Some(e),
+            Error::Request(e) => Some(e),
 
             #[cfg(feature = "chrono")]
-            Error::ParseTimeLike { ref original_err, .. } => match original_err {
+            Error::ParseTimeLike { original_err, .. } => match original_err {
                 Some(e) => Some(e),
                 None => None,
             },
@@ -196,8 +196,8 @@ impl StdError for Error {
 impl Error {
 
     fn description(&self) -> String {
-        match *self {
-            Error::Json(ref e) => String::from(e.to_string()),
+        match self {
+            Error::Json(e) => String::from(e.to_string()),
 
             Error::Authorization(_) => String::from(
                 "Auth key was provided in an invalid format for a header."
@@ -205,14 +205,14 @@ impl Error {
 
             Error::Url(_) => String::from("Invalid URL was given/built."),
 
-            Error::Ratelimited { limit, ref time_until_reset, .. } => {
+            Error::Ratelimited { limit, time_until_reset, .. } => {
                 let lim_part = match limit {
                     Some(lim) => format!(" Limit of {} requests/min.", lim),
                     None => String::from(""),
                 };
 
-                let time_part = match *time_until_reset {
-                    Some(ref timeur) => format!(" Resets at timestamp {}.", timeur),
+                let time_part = match time_until_reset {
+                    Some(timeur) => format!(" Resets at timestamp {}.", timeur),
                     None => String::from(""),
                 };
 
@@ -227,21 +227,21 @@ impl Error {
                 format!("Ratelimited{}{}{}", dot, lim_part, time_part)
             },
 
-            Error::Request(ref e) => e.to_string(),
+            Error::Request(e) => e.to_string(),
 
 //            Error::Decode(msg, _) => String::from(msg),
 
-            Error::Status(ref status, _, _) => String::from(
+            Error::Status(status, _, _) => String::from(
                 status.canonical_reason().unwrap_or(
                     "Unknown HTTP status code error received"
                 )
             ),
 
-            Error::FetchFrom(ref string) => string.clone(),
+            Error::FetchFrom(string) => string.clone(),
 
             #[cfg(feature = "chrono")]
             Error::ParseTimeLike {
-                ref reason,
+                reason,
                 ..
             } => reason.clone(),
         }
@@ -285,10 +285,9 @@ impl Error {
             }
         }
 
-        let api_error: Option<APIError> = match value {
-            Some(ref val) => serde_json::from_value(val.clone()).ok(),
-            None => None,
-        };
+        let api_error = value
+            .as_ref()
+            .and_then(|val| serde_json::from_value(val.clone()).ok());
 
         Error::Status(status, api_error, value)
     }
@@ -331,10 +330,10 @@ impl Error {
             }
         }
 
-        let api_error: Option<APIError> = match value {
-            Some(ref val) => serde_json::from_value(val.clone()).ok(),
-            None => None,
-        };
+        let api_error = value
+            .as_ref()
+            .and_then(|val| serde_json::from_value(val.clone()).ok());
+
 
         Error::Status(status, api_error, value)
     }

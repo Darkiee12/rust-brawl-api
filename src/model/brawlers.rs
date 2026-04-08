@@ -10,6 +10,7 @@ use serde::{self, Serialize, Deserialize};
 use crate::error::Result;
 
 #[cfg(feature = "async")]
+use async_trait::async_trait;
 use crate::http::Client;
 
 use super::common::{StarPower, Gadget, Gear, HyperCharge};
@@ -343,6 +344,7 @@ impl Brawler {
     }
 }
 
+#[cfg_attr(feature = "async", async_trait)]
 impl Refetchable for Brawler {
     /// (Sync) Fetches data for this brawler again.
     fn refetch(&self, client: &Client) -> Result<Brawler> {
@@ -356,6 +358,7 @@ impl Refetchable for Brawler {
     }
 }
 
+#[cfg_attr(feature = "async", async_trait)]
 #[cfg(feature = "players")]
 impl FetchFrom<PlayerBrawlerStat> for Brawler {
     /// (Sync) Attempts to fetch a `Brawler` from an existing [`PlayerBrawlerStat`] instance.
@@ -374,6 +377,7 @@ impl FetchFrom<PlayerBrawlerStat> for Brawler {
     }
 }
 
+#[cfg_attr(feature = "async", async_trait)]
 #[cfg(feature = "players")]
 impl FetchFrom<BattleBrawler> for Brawler {
     /// (Sync) Attempts to fetch a `Brawler` from an existing [`BattleBrawler`] instance.
@@ -392,6 +396,7 @@ impl FetchFrom<BattleBrawler> for Brawler {
     }
 }
 
+#[cfg_attr(feature = "async", async_trait)]
 impl FetchFrom<Brawlers> for Brawler {
     /// (Sync) Attempts to fetch a `Brawler` from an existing [`Brawlers`] variant.
     ///

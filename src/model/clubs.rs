@@ -2,6 +2,7 @@
 //! Included by the feature `"clubs"`; removing that feature will disable the usage of this module.
 
 #[cfg(feature = "async")]
+use async_trait::async_trait;
 
 use serde::{self, Serialize, Deserialize};
 
@@ -142,6 +143,7 @@ impl GetFetchProp for Club {
     fn get_route(tag: &str) -> Route { Route::Club(auto_hashtag(tag)) }
 }
 
+#[cfg_attr(feature = "async", async_trait)]
 impl PropFetchable for Club {
     type Property = str;
 
@@ -213,7 +215,10 @@ impl PropFetchable for Club {
     /// [`Error::Ratelimited`]: error/enum.Error.html#variant.Ratelimited
     /// [`Error::Json`]: error/enum.Error.html#variant.Json
     #[cfg(feature="async")]
-    async fn a_fetch(client: &Client, tag: &str) -> Result<Club> {
+    async fn a_fetch(client: &Client, tag: &'async_trait str) -> Result<Club>
+        where Self: 'async_trait,
+              Self::Property: 'async_trait,
+    {
         let route = Club::get_route(tag);
         let mut club = a_fetch_route::<Club>(client, &route).await?;
         club.members.tag = club.tag.clone();
@@ -221,6 +226,7 @@ impl PropFetchable for Club {
     }
 }
 
+#[cfg_attr(feature = "async", async_trait)]
 #[cfg(feature = "players")]
 impl FetchFrom<PlayerClub> for Club {
     /// (Sync) Fetches a `Club` using data from a [`PlayerClub`] object.
@@ -239,6 +245,7 @@ impl FetchFrom<PlayerClub> for Club {
     }
 }
 
+#[cfg_attr(feature = "async", async_trait)]
 #[cfg(feature = "rankings")]
 impl FetchFrom<ClubRanking> for Club {
 
@@ -572,6 +579,7 @@ pub mod members {
         }
     }
 
+    #[cfg_attr(feature = "async", async_trait)]
     impl PropFetchable for ClubMembers {
         type Property = str;
 
@@ -649,7 +657,10 @@ pub mod members {
         /// [`Error::Ratelimited`]: error/enum.Error.html#variant.Ratelimited
         /// [`Error::Json`]: error/enum.Error.html#variant.Json
         #[cfg(feature="async")]
-        async fn a_fetch(client: &Client, tag: &str) -> Result<ClubMembers> {
+        async fn a_fetch(client: &Client, tag: &'async_trait str) -> Result<ClubMembers>
+            where Self: 'async_trait,
+                  Self::Property: 'async_trait,
+        {
             let route = ClubMembers::get_route(tag);
             let mut members = a_fetch_route::<ClubMembers>(client, &route).await?;
             members.tag = tag.to_owned();

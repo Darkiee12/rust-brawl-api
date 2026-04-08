@@ -1,0 +1,16 @@
+{
+  "items": [
+    {
+      "slotId": 1,
+      "event": {
+        "mode": "gemGrab",
+        "modeId": 0,
+        "modifiers": ["none"],
+        "id": 15000001,
+        "map": "TestMap1"
+      },
+      "startTime": "20250401T120000.000Z",
+      "endTime": "20250401T140000.000Z"
+    }
+  ]
+}

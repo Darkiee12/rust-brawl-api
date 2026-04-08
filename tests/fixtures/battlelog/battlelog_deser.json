@@ -1,0 +1,98 @@
+{
+  "items": [
+    {
+      "battleTime": "20200131T003432.000Z",
+      "event": {
+        "id": 15000163,
+        "mode": "brawlBall",
+        "map": "Coarse Course"
+      },
+      "battle": {
+        "mode": "brawlBall",
+        "type": "ranked",
+        "result": "victory",
+        "duration": 96,
+        "trophyChange": 8,
+        "starPlayer": {
+          "tag": "#CCCCCCCC",
+          "name": "User",
+          "brawler": {
+            "id": 16000008,
+            "name": "NITA",
+            "power": 10,
+            "trophies": 500
+          }
+        },
+        "teams": [
+          [
+            {
+              "tag": "#CCCCCCCC",
+              "name": "User",
+              "brawler": {
+                "id": 16000008,
+                "name": "NITA",
+                "power": 10,
+                "trophies": 500
+              }
+            },
+            {
+              "tag": "#RRRAAALLL",
+              "name": "Other User",
+              "brawler": {
+                "id": 16000001,
+                "name": "COLT",
+                "power": 8,
+                "trophies": 510
+              }
+            },
+            {
+              "tag": "#GGGGGGGGG",
+              "name": "Another User",
+              "brawler": {
+                "id": 16000018,
+                "name": "DARRYL",
+                "power": 10,
+                "trophies": 520
+              }
+            }
+          ],
+          [
+            {
+              "tag": "#777777777",
+              "name": "User User User",
+              "brawler": {
+                "id": 16000032,
+                "name": "MAX",
+                "power": 10,
+                "trophies": 500
+              }
+            },
+            {
+              "tag": "#SUVSUVSUV",
+              "name": "User.User?!\uf8ff",
+              "brawler": {
+                "id": 16000024,
+                "name": "ROSA",
+                "power": 9,
+                "trophies": 400
+              }
+            },
+            {
+              "tag": "#QCPJ09J",
+              "name": "\u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044c",
+              "brawler": {
+                "id": 16000028,
+                "name": "SANDY",
+                "power": 10,
+                "trophies": 450
+              }
+            }
+          ]
+        ]
+      }
+    }
+  ],
+  "paging": {
+    "cursors": {}
+  }
+}

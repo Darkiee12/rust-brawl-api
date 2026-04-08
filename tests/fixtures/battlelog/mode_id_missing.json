@@ -1,0 +1,98 @@
+{
+  "items": [
+    {
+      "battleTime": "20250401T120000.000Z",
+      "event": {
+        "id": 15000005,
+        "mode": "bounty",
+        "map": "Shooting Star"
+      },
+      "battle": {
+        "mode": "bounty",
+        "type": "ranked",
+        "result": "defeat",
+        "duration": 90,
+        "trophyChange": -5,
+        "starPlayer": {
+          "tag": "#BNT0004",
+          "name": "TestPlayerB4",
+          "brawler": {
+            "id": 16000001,
+            "name": "TEST_BRAWLER_B4",
+            "power": 11,
+            "trophies": 530
+          }
+        },
+        "teams": [
+          [
+            {
+              "tag": "#BNT0001",
+              "name": "TestPlayerB1",
+              "brawler": {
+                "id": 16000019,
+                "name": "TEST_BRAWLER_B1",
+                "power": 10,
+                "trophies": 520
+              }
+            },
+            {
+              "tag": "#BNT0002",
+              "name": "TestPlayerB2",
+              "brawler": {
+                "id": 16000017,
+                "name": "TEST_BRAWLER_B2",
+                "power": 11,
+                "trophies": 518
+              }
+            },
+            {
+              "tag": "#BNT0003",
+              "name": "TestPlayerB3",
+              "brawler": {
+                "id": 16000023,
+                "name": "TEST_BRAWLER_B3",
+                "power": 11,
+                "trophies": 515
+              }
+            }
+          ],
+          [
+            {
+              "tag": "#BNT0004",
+              "name": "TestPlayerB4",
+              "brawler": {
+                "id": 16000001,
+                "name": "TEST_BRAWLER_B4",
+                "power": 11,
+                "trophies": 530
+              }
+            },
+            {
+              "tag": "#BNT0005",
+              "name": "TestPlayerB5",
+              "brawler": {
+                "id": 16000045,
+                "name": "TEST_BRAWLER_B5",
+                "power": 10,
+                "trophies": 526
+              }
+            },
+            {
+              "tag": "#BNT0006",
+              "name": "TestPlayerB6",
+              "brawler": {
+                "id": 16000020,
+                "name": "TEST_BRAWLER_B6",
+                "power": 10,
+                "trophies": 522
+              }
+            }
+          ]
+        ]
+      }
+    }
+  ],
+  "paging": {
+    "cursors": {}
+  }
+}

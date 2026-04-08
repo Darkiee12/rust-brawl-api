@@ -1,0 +1,99 @@
+{
+  "items": [
+    {
+      "battleTime": "20250401T120000.000Z",
+      "event": {
+        "id": 15000007,
+        "mode": "gemGrab",
+        "modeId": 0,
+        "map": "Hard Rock Mine"
+      },
+      "battle": {
+        "mode": "gemGrab",
+        "type": "ranked",
+        "result": "victory",
+        "duration": 120,
+        "trophyChange": 10,
+        "starPlayer": {
+          "tag": "#GEM0001",
+          "name": "TestPlayerG1",
+          "brawler": {
+            "id": 16000019,
+            "name": "TEST_BRAWLER_G1",
+            "power": 11,
+            "trophies": 520
+          }
+        },
+        "teams": [
+          [
+            {
+              "tag": "#GEM0001",
+              "name": "TestPlayerG1",
+              "brawler": {
+                "id": 16000019,
+                "name": "TEST_BRAWLER_G1",
+                "power": 11,
+                "trophies": 520
+              }
+            },
+            {
+              "tag": "#GEM0002",
+              "name": "TestPlayerG2",
+              "brawler": {
+                "id": 16000023,
+                "name": "TEST_BRAWLER_G2",
+                "power": 10,
+                "trophies": 515
+              }
+            },
+            {
+              "tag": "#GEM0003",
+              "name": "TestPlayerG3",
+              "brawler": {
+                "id": 16000005,
+                "name": "TEST_BRAWLER_G3",
+                "power": 11,
+                "trophies": 510
+              }
+            }
+          ],
+          [
+            {
+              "tag": "#GEM0004",
+              "name": "TestPlayerG4",
+              "brawler": {
+                "id": 16000012,
+                "name": "TEST_BRAWLER_G4",
+                "power": 11,
+                "trophies": 500
+              }
+            },
+            {
+              "tag": "#GEM0005",
+              "name": "TestPlayerG5",
+              "brawler": {
+                "id": 16000026,
+                "name": "TEST_BRAWLER_G5",
+                "power": 10,
+                "trophies": 498
+              }
+            },
+            {
+              "tag": "#GEM0006",
+              "name": "TestPlayerG6",
+              "brawler": {
+                "id": 16000014,
+                "name": "TEST_BRAWLER_G6",
+                "power": 11,
+                "trophies": 495
+              }
+            }
+          ]
+        ]
+      }
+    }
+  ],
+  "paging": {
+    "cursors": {}
+  }
+}

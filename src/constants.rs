@@ -20,15 +20,12 @@ pub const USER_AGENT: &str = concat!(
 #[cfg(feature = "chrono")]
 pub const TIMELIKE_FORMAT: &str = "%Y%m%dT%H%M%S%.fZ";
 
-/// Maps human-readable brawler names to their API IDs.
-/// Use by casting to `usize`: e.g. `Brawlers::Shelly as usize`.
+/// This eunm is an effort to aid the programmer's usage of brawler-related endpoints, by mapping
+/// human-readable brawler names to their respective IDs. (Use by casting to int; e.g. `x as usize`)
 ///
-/// This enum is updated to match the brawlers endpoint but may lag behind new releases.
-/// For an always-current list, fetch the `/brawlers/` endpoint at runtime.
-/// 
 /// This is by no means a final enum and must be updated on every new Brawler release.
 ///
-/// If a permanently up-to-date list is needed, one can fetch the `/brawlers/` endpoint using
+/// If a permanently up-to-date list is needed, one can fetch the `/brawlers/` or `/gamemodes/` endpoint using
 /// the available models. If still using this enum, though, rest assured that we will do our best
 /// to keep it updated - if it is not, why not contribute with a PR? ;)
 #[non_exhaustive]

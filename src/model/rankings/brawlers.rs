@@ -104,6 +104,50 @@ impl DerefMut for BrawlerLeaderboard {
 }
 
 impl BrawlerLeaderboard {
+    /// Returns the route for brawler rankings with optional cursor parameters.
+    pub fn get_route_with(
+        country_code: &str,
+        brawler_id: usize,
+        limit: u8,
+        before: Option<&str>,
+        after: Option<&str>,
+    ) -> Route {
+        Route::BrawlerRankings {
+            country_code: country_code.to_owned(),
+            brawler_id,
+            limit,
+            before: before.map(|cursor| cursor.to_owned()),
+            after: after.map(|cursor| cursor.to_owned()),
+        }
+    }
+
+    /// (Sync) Fetches brawler rankings with optional cursor parameters.
+    pub fn fetch_with(
+        client: &Client,
+        country_code: &str,
+        brawler_id: usize,
+        limit: u8,
+        before: Option<&str>,
+        after: Option<&str>,
+    ) -> Result<BrawlerLeaderboard> {
+        let route = BrawlerLeaderboard::get_route_with(country_code, brawler_id, limit, before, after);
+        fetch_route::<BrawlerLeaderboard>(client, &route)
+    }
+
+    /// (Async) Fetches brawler rankings with optional cursor parameters.
+    #[cfg(feature = "async")]
+    pub async fn a_fetch_with(
+        client: &Client,
+        country_code: &str,
+        brawler_id: usize,
+        limit: u8,
+        before: Option<&str>,
+        after: Option<&str>,
+    ) -> Result<BrawlerLeaderboard> {
+        let route = BrawlerLeaderboard::get_route_with(country_code, brawler_id, limit, before, after);
+        a_fetch_route::<BrawlerLeaderboard>(client, &route).await
+    }
+
     /// (Sync) Fetches the top `limit <= 200` players in the regional (two-letter) `country_code`
     /// leaderboard (or global leaderboard, if `country_code == "global"`), **sorted by their
     /// trophies with the brawler represented by `brawler_id`.** (Tip: use the [`Brawler`] enum
@@ -179,12 +223,7 @@ impl BrawlerLeaderboard {
     pub fn fetch(
         client: &Client, country_code: &str, brawler_id: usize, limit: u8,
     ) -> Result<BrawlerLeaderboard> {
-        let route = Route::BrawlerRankings {
-            country_code: country_code.to_owned(),
-            brawler_id,
-            limit
-        };
-        fetch_route::<BrawlerLeaderboard>(client, &route)
+        BrawlerLeaderboard::fetch_with(client, country_code, brawler_id, limit, None, None)
     }
 
     /// (Async) Fetches the top `limit <= 200` players in the regional (two-letter) `country_code`
@@ -263,12 +302,7 @@ impl BrawlerLeaderboard {
     pub async fn a_fetch(
         client: &Client, country_code: &str, brawler_id: usize, limit: u8,
     ) -> Result<BrawlerLeaderboard> {
-        let route = Route::BrawlerRankings {
-            country_code: country_code.to_owned(),
-            brawler_id,
-            limit
-        };
-        a_fetch_route::<BrawlerLeaderboard>(client, &route).await
+        BrawlerLeaderboard::a_fetch_with(client, country_code, brawler_id, limit, None, None).await
     }
 }
 

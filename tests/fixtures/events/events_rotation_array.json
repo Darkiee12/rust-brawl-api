@@ -1,0 +1,14 @@
+[
+  {
+    "slotId": 1,
+    "event": {
+      "mode": "gemGrab",
+      "modeId": 0,
+      "modifiers": ["none"],
+      "id": 15000001,
+      "map": {"en": "Hard Rock Mine"}
+    },
+    "startTime": "20250401T120000.000Z",
+    "endTime": "20250401T140000.000Z"
+  }
+]

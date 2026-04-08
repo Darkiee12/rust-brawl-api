@@ -1,0 +1,52 @@
+{
+  "tag": "#AAAAAAA",
+  "name": "TestPlayer1",
+  "nameColor": "0xff1ba5f5",
+  "icon": { "id": 28000151 },
+  "trophies": 16817,
+  "highestTrophies": 17071,
+  "totalPrestigeLevel": 0,
+  "expLevel": 121,
+  "expPoints": 77399,
+  "isQualifiedFromChampionshipChallenge": false,
+  "3vs3Victories": 2735,
+  "soloVictories": 274,
+  "duoVictories": 446,
+  "bestRoboRumbleTime": 5,
+  "bestTimeAsBigBrawler": 0,
+  "club": {
+    "tag": "#CCCCCCC",
+    "name": "TestClub1"
+  },
+  "brawlers": [
+    {
+      "id": 16000000,
+      "name": "SHELLY",
+      "power": 9,
+      "rank": 2,
+      "trophies": 422,
+      "highestTrophies": 434,
+      "prestigeLevel": 0,
+      "currentWinStreak": 0,
+      "maxWinStreak": 0,
+      "skin": {
+        "id": 29000159,
+        "name": "TEST_SKIN_1"
+      },
+      "gadgets": [
+        {
+          "id": 23000288,
+          "name": "TEST_GADGET_1"
+        }
+      ],
+      "gears": [],
+      "starPowers": [],
+      "hyperCharges": [],
+      "buffies": {
+        "gadget": false,
+        "starPower": false,
+        "hyperCharge": false
+      }
+    }
+  ]
+}

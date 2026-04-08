@@ -32,6 +32,9 @@
 //! (direct implementation; no fetching-related traits), [`model::rankings::brawlers`] module;
 //! - `/brawlers/` -> [`BrawlerList::fetch`] (direct implementation), [`model::brawlers`] module;
 //! - `/brawlers/:id` -> [`Brawler::fetch`] (direct implementation), [`model::brawlers`] module.
+//! - `/gamemodes` -> [`EventTypeList::fetch`] (direct implementation), [`model::events`] module;
+//! - `/events/rotation` -> [`ScheduledEvents::fetch`] (direct implementation), [`model::events`]
+//! module.
 //!
 //! [`serde::ser::Serialize`]: https://docs.rs/serde/*/ser/trait.Serialize.html
 //! [`serde::de::Deserialize`]: https://docs.rs/serde/*/de/trait.Deserialize.html
@@ -47,6 +50,8 @@
 //! [`BrawlerLeaderboard::fetch`]: ./rankings/players/struct.BrawlerLeaderboard.html#method.fetch
 //! [`BrawlerList::fetch`]: ./brawlers/struct.BrawlerList.html#method.fetch
 //! [`Brawler::fetch`]: ./brawlers/struct.Brawler.html#method.fetch
+//! [`EventTypeList::fetch`]: ./events/struct.EventTypeList.html#method.fetch
+//! [`ScheduledEvents::fetch`]: ./events/struct.ScheduledEvents.html#method.fetch
 //! [`PropFetchable`]: traits/propfetch/trait.PropFetchable.html
 //! [`PropLimFetchable`]: traits/proplimfetch/trait.PropLimFetchable.html
 //! [`model::players::player`]: ./players/player/index.html
@@ -57,6 +62,7 @@
 //! [`model::rankings::clubs`]: ./rankings/clubs/index.html
 //! [`model::rankings::brawlers`]: ./rankings/brawlers/index.html
 //! [`model::brawlers`]: ./brawlers/index.html
+//! [`model::events`]: ./events/index.html
 
 pub mod common;
 pub use common::*;
@@ -80,3 +86,6 @@ pub use rankings::*;
 pub mod brawlers;
 #[cfg(feature = "brawlers")]
 pub use brawlers::*;
+
+pub mod events;
+pub use events::*;

@@ -10,6 +10,7 @@ use crate::util::fetch_route;
 use crate::error::Result;
 
 #[cfg(feature = "async")]
+use async_trait::async_trait;
 
 #[cfg(feature = "async")]
 use crate::util::a_fetch_route;
@@ -89,6 +90,50 @@ impl DerefMut for PlayerLeaderboard {
     }
 }
 
+impl PlayerLeaderboard {
+    /// Get the route for fetching the top `limit` players in the regional `country_code`
+    /// leaderboard (or global, if `country_code == "global"`) with optional cursors.
+    pub fn get_route_with(
+        country_code: &str,
+        limit: u8,
+        before: Option<&str>,
+        after: Option<&str>,
+    ) -> Route {
+        Route::PlayerRankings {
+            country_code: country_code.to_owned(),
+            limit,
+            before: before.map(|cursor| cursor.to_owned()),
+            after: after.map(|cursor| cursor.to_owned()),
+        }
+    }
+
+    /// (Sync) Fetches player rankings with optional cursor parameters.
+    pub fn fetch_with(
+        client: &Client,
+        country_code: &str,
+        limit: u8,
+        before: Option<&str>,
+        after: Option<&str>,
+    ) -> Result<PlayerLeaderboard> {
+        let route = PlayerLeaderboard::get_route_with(country_code, limit, before, after);
+        fetch_route::<PlayerLeaderboard>(client, &route)
+    }
+
+    /// (Async) Fetches player rankings with optional cursor parameters.
+    #[cfg(feature = "async")]
+    pub async fn a_fetch_with(
+        client: &Client,
+        country_code: &str,
+        limit: u8,
+        before: Option<&str>,
+        after: Option<&str>,
+    ) -> Result<PlayerLeaderboard> {
+        let route = PlayerLeaderboard::get_route_with(country_code, limit, before, after);
+        a_fetch_route::<PlayerLeaderboard>(client, &route).await
+    }
+}
+
+#[cfg_attr(feature = "async", async_trait)]
 impl PropLimFetchable for PlayerLeaderboard {
     type Property = str;
     type Limit = u8;
@@ -155,8 +200,7 @@ impl PropLimFetchable for PlayerLeaderboard {
     /// [`Error::Ratelimited`]: error/enum.Error.html#variant.Ratelimited
     /// [`Error::Json`]: error/enum.Error.html#variant.Json
     fn fetch(client: &Client, country_code: &str, limit: u8) -> Result<PlayerLeaderboard> {
-        let route = PlayerLeaderboard::get_route(country_code, limit);
-        fetch_route::<PlayerLeaderboard>(client, &route)
+        PlayerLeaderboard::fetch_with(client, country_code, limit, None, None)
     }
 
     /// (Async) Fetches the top `limit` players in the regional (two-letter) `country_code`
@@ -222,10 +266,12 @@ impl PropLimFetchable for PlayerLeaderboard {
     /// [`Error::Json`]: error/enum.Error.html#variant.Json
     #[cfg(feature="async")]
     async fn a_fetch(
-        client: &Client, country_code: &str, limit: u8
-    ) -> Result<PlayerLeaderboard> {
-        let route = PlayerLeaderboard::get_route(country_code, limit);
-        a_fetch_route::<PlayerLeaderboard>(client, &route).await
+        client: &Client, country_code: &'async_trait str, limit: u8
+    ) -> Result<PlayerLeaderboard>
+        where Self: 'async_trait,
+              Self::Property: 'async_trait,
+    {
+        PlayerLeaderboard::a_fetch_with(client, country_code, limit, None, None).await
     }
 }
 
@@ -236,10 +282,7 @@ impl PropLimRouteable for PlayerLeaderboard {
     /// Get the route for fetching the top `limit` players in the regional `country_code`
     /// leaderboard (or global, if `country_code == "global"`).
     fn get_route(country_code: &str, limit: u8) -> Route {
-        Route::PlayerRankings {
-            country_code: country_code.to_owned(),
-            limit
-        }
+        PlayerLeaderboard::get_route_with(country_code, limit, None, None)
     }
 }
 

@@ -1,0 +1,88 @@
+{
+  "items": [
+    {
+      "battleTime": "20241218T021311.000Z",
+      "event": {
+        "id": 0,
+        "mode": "bounty",
+        "modeId": 3,
+        "map": null
+      },
+      "battle": {
+        "mode": "bounty",
+        "type": "friendly",
+        "result": "victory",
+        "duration": 120,
+        "teams": [
+          [
+            {
+              "tag": "#BBBBBBB",
+              "name": "TestPlayer2",
+              "brawler": {
+                "id": 16000019,
+                "name": "TEST_BRAWLER",
+                "power": -1,
+                "trophies": -1
+              }
+            },
+            {
+              "tag": "#EEE0002",
+              "name": "TestPlayer13",
+              "brawler": {
+                "id": 16000001,
+                "name": "TEST_BRAWLER_13",
+                "power": -1,
+                "trophies": -1
+              }
+            },
+            {
+              "tag": "#EEE0003",
+              "name": "TestPlayer14",
+              "brawler": {
+                "id": 16000004,
+                "name": "TEST_BRAWLER_14",
+                "power": -1,
+                "trophies": -1
+              }
+            }
+          ],
+          [
+            {
+              "tag": "#FFF0001",
+              "name": "TestPlayer15",
+              "brawler": {
+                "id": 16000011,
+                "name": "TEST_BRAWLER_15",
+                "power": -1,
+                "trophies": -1
+              }
+            },
+            {
+              "tag": "#FFF0002",
+              "name": "TestPlayer16",
+              "brawler": {
+                "id": 16000038,
+                "name": "TEST_BRAWLER_16",
+                "power": -1,
+                "trophies": -1
+              }
+            },
+            {
+              "tag": "#FFF0003",
+              "name": "TestPlayer17",
+              "brawler": {
+                "id": 16000024,
+                "name": "TEST_BRAWLER_17",
+                "power": -1,
+                "trophies": -1
+              }
+            }
+          ]
+        ]
+      }
+    }
+  ],
+  "paging": {
+    "cursors": {}
+  }
+}

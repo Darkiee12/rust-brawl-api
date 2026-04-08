@@ -1,5 +1,8 @@
 //! Models shared for usage by more than one endpoint. Note that, if all the relevant endpoints'
 //! features are disabled, then the respective models here are also disabled.
+//!
+//! Field names and shapes mirror the official Brawl Stars API responses:
+//! https://developer.brawlstars.com/#/documentation
 
 use serde::{self, Serialize, Deserialize};
 

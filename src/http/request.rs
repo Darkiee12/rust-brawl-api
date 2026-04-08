@@ -84,7 +84,7 @@ impl<'a> Request<'a> {
             builder = builder.body(Vec::from(bytes));
         }
 
-        let key = client.auth_key.clone();
+        let key = &client.auth_key;
 
         let key = if key.starts_with("Bearer ") {
             key.clone()

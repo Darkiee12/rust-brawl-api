@@ -1,0 +1,88 @@
+{
+  "items": [
+    {
+      "battleTime": "20241218T021311.000Z",
+      "event": {
+        "id": 0,
+        "mode": "bounty",
+        "modeId": 3,
+        "map": null
+      },
+      "battle": {
+        "mode": "bounty",
+        "type": "friendly",
+        "result": "victory",
+        "duration": 120,
+        "teams": [
+          [
+            {
+              "tag": "#CCC0001",
+              "name": "TestPlayer7",
+              "brawler": {
+                "id": 16000019,
+                "name": "TEST_BRAWLER_7",
+                "power": 10,
+                "trophies": 100
+              }
+            },
+            {
+              "tag": "#CCC0002",
+              "name": "TestPlayer8",
+              "brawler": {
+                "id": 16000043,
+                "name": "TEST_BRAWLER_8",
+                "power": 10,
+                "trophies": 101
+              }
+            },
+            {
+              "tag": "#CCC0003",
+              "name": "TestPlayer9",
+              "brawler": {
+                "id": 16000023,
+                "name": "TEST_BRAWLER_9",
+                "power": 10,
+                "trophies": 102
+              }
+            }
+          ],
+          [
+            {
+              "tag": "#DDD0001",
+              "name": "TestPlayer10",
+              "brawler": {
+                "id": 16000001,
+                "name": "TEST_BRAWLER_10",
+                "power": 10,
+                "trophies": 99
+              }
+            },
+            {
+              "tag": "#DDD0002",
+              "name": "TestPlayer11",
+              "brawler": {
+                "id": 16000008,
+                "name": "TEST_BRAWLER_11",
+                "power": 10,
+                "trophies": 98
+              }
+            },
+            {
+              "tag": "#DDD0003",
+              "name": "TestPlayer12",
+              "brawler": {
+                "id": 16000045,
+                "name": "TEST_BRAWLER_12",
+                "power": 10,
+                "trophies": 97
+              }
+            }
+          ]
+        ]
+      }
+    }
+  ],
+  "paging": {
+    "cursors": {}
+  }
+}

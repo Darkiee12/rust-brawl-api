@@ -10,7 +10,13 @@ This directory contains integration tests for the `brawl_api` crate. Inside this
   "tags": {
     "player": "#PLAYER_TAG_TO_USE_WHEN_TESTING_PLAYER_FETCHING",
     "club": "#CLUB_TAG_TO_USE_WHEN_TESTING_CLUB_FETCHING"
-  }
+  },
+  "rankings_matrix": {
+        "country_sample_size": 20,
+        "country_sample_seed": 67,
+        "cursor_variant_count": 4,
+        "cursor_variant_seed": 11
+    }
 }
 ```
 
